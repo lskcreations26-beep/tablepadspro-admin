@@ -339,6 +339,7 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
     <button class="tab active" onclick="sw('chat')">💬 Live Chat</button>
     <button class="tab" onclick="sw('training')">🎓 Training</button>
     <button class="tab" onclick="sw('logs')">📋 Logs</button>
+    <button class="tab" onclick="sw('leads')">🎯 Leads</button>
     <button class="tab" onclick="sw('analytics')">📊 Analytics</button>
     <button class="tab" onclick="sw('settings')">⚙️ Settings</button>
   </div>
@@ -485,28 +486,55 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
     </div>
   </div>
 
+  <!-- LEADS -->
+  <div class="panel" id="panel-leads">
+    <div class="logs-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);">🎯 Leads</div>
+        <div style="display:flex;gap:8px;">
+          <button class="export-btn" onclick="exportLeadsCSV()">📥 Export CSV</button>
+          <button class="clear-btn" onclick="fetchLeads()">🔄 Refresh</button>
+        </div>
+      </div>
+      <div id="leads-count" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Loading leads...</div>
+      <div style="overflow-x:auto;">
+        <table id="leads-table" style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead>
+            <tr style="background:var(--brand);color:#fff;text-align:left;">
+              <th style="padding:10px 12px;border-radius:8px 0 0 0;">Name</th>
+              <th style="padding:10px 12px;">Email</th>
+              <th style="padding:10px 12px;">Phone</th>
+              <th style="padding:10px 12px;">Source</th>
+              <th style="padding:10px 12px;">Page</th>
+              <th style="padding:10px 12px;">First Message</th>
+              <th style="padding:10px 12px;border-radius:0 8px 0 0;">Time</th>
+            </tr>
+          </thead>
+          <tbody id="leads-body">
+            <tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- ANALYTICS -->
   <div class="panel" id="panel-analytics">
     <div class="ana-wrap">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);">Analytics</div>
-        <button class="clear-btn" onclick="clearAnalytics()">🗑 Reset analytics</button>
+        <button class="clear-btn" onclick="fetchAnalytics()">🔄 Refresh</button>
       </div>
       <div class="metrics" id="metrics-grid">
-        <div class="mc"><div class="mc-lbl">Conversations</div><div class="mc-val" id="s-convos">0</div><div class="mc-chg">this session</div></div>
-        <div class="mc"><div class="mc-lbl">Bot resolved</div><div class="mc-val" id="s-resolved">0%</div><div class="mc-chg">no escalations</div></div>
-        <div class="mc"><div class="mc-lbl">Leads captured</div><div class="mc-val" id="s-leads">0</div><div class="mc-chg">this session</div></div>
-        <div class="mc"><div class="mc-lbl">Avg response</div><div class="mc-val">~1s</div><div class="mc-chg">simulated</div></div>
-        <div class="mc"><div class="mc-lbl">Emails logged</div><div class="mc-val" id="s-emails">0</div><div class="mc-chg">100% logged</div></div>
+        <div class="mc"><div class="mc-lbl">Total Conversations</div><div class="mc-val" id="s-convos">0</div><div class="mc-chg">all time</div></div>
+        <div class="mc"><div class="mc-lbl">Avg Rating</div><div class="mc-val" id="s-resolved">—</div><div class="mc-chg">customer satisfaction</div></div>
+        <div class="mc"><div class="mc-lbl">Leads (with email)</div><div class="mc-val" id="s-leads">0</div><div class="mc-chg">all time</div></div>
+        <div class="mc"><div class="mc-lbl">Active Now</div><div class="mc-val" id="s-emails">0</div><div class="mc-chg">live visitors</div></div>
       </div>
       <div class="chart-card">
-        <div class="cc-lbl">Daily conversations (sample)</div>
-        <div class="bars" id="ana-bars"></div>
-      </div>
-      <div class="chart-card">
-        <div class="cc-lbl">Top customer questions this session</div>
+        <div class="cc-lbl">Traffic Sources — where visitors are coming from</div>
         <div class="faq-tbl" id="top-questions">
-          <div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">No conversations yet</span></div>
+          <div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">Loading traffic data...</span></div>
         </div>
       </div>
     </div>
@@ -1406,7 +1434,8 @@ function sw(tab){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+tab).classList.add('active');
   if(tab==='logs')renderLogs('all');
-  if(tab==='analytics')buildBars();
+  if(tab==='leads'){fetchLeads();}
+  if(tab==='analytics'){fetchAnalytics();}
   if(tab==='training'){renderQA();renderProducts();}
 }
 function swT(el,s){
@@ -1672,7 +1701,54 @@ function checkConversationEnd(txt){
   }, 800);
 }
 
-/* ── REAL-TIME ADMIN POLLING ── */
+/* ── LEADS ── */
+let leadsData = [];
+
+function fetchLeads() {
+  fetch(ADMIN_SERVER + '/admin/leads')
+    .then(r => r.json())
+    .then(d => {
+      leadsData = d.leads || [];
+      renderLeads();
+    }).catch(() => {
+      document.getElementById('leads-body').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#e55;">Could not load leads from server.</td></tr>';
+    });
+}
+
+function renderLeads() {
+  const tbody = document.getElementById('leads-body');
+  const count = document.getElementById('leads-count');
+  if(!leadsData.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-muted);">No leads yet. Leads are captured when visitors share their email or go through a flow (swatches, kit, in-home).</td></tr>';
+    count.textContent = '0 leads total';
+    return;
+  }
+  count.textContent = leadsData.length + ' lead' + (leadsData.length===1?'':'s') + ' total';
+  tbody.innerHTML = leadsData.map((l,i) => `
+    <tr style="background:${i%2===0?'#fff':'var(--surface2)'};border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;font-weight:500;">${l.name||'—'}</td>
+      <td style="padding:9px 12px;color:#2C5F2E;">${l.email ? '<a href="mailto:'+l.email+'" style="color:var(--brand);">'+l.email+'</a>' : '—'}</td>
+      <td style="padding:9px 12px;">${l.phone||'—'}</td>
+      <td style="padding:9px 12px;font-size:11.5px;">${l.source||'Direct'}</td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--text-muted);">${(l.page||'').substring(0,30)}</td>
+      <td style="padding:9px 12px;font-size:11.5px;color:var(--text-muted);">${(l.message||'').substring(0,40)}</td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--text-muted);">${l.time||'—'}</td>
+    </tr>`).join('');
+}
+
+function exportLeadsCSV() {
+  if(!leadsData.length){ showToast('⚠️','No leads to export'); return; }
+  const rows = [['Name','Email','Phone','Source','Page','First Message','Time']];
+  leadsData.forEach(l => rows.push([
+    l.name||'', l.email||'', l.phone||'', l.source||'', l.page||'', l.message||'', l.time||''
+  ]));
+  const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'TablePadsPro_Leads_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  showToast('📥','Leads exported to CSV!');
+}
 const ADMIN_SERVER = 'https://tablepadspro-chatbot-production.up.railway.app';
 let activeConversations = {};
 let selectedSessionId = null;
@@ -1684,12 +1760,8 @@ function pollConversations() {
       const convs = d.conversations || [];
       activeConversations = {};
       convs.forEach(c => { activeConversations[c.sessionId] = c; });
-
-      // Update visitor count
       document.getElementById('vis-count').textContent = convs.length;
       document.getElementById('live-count').textContent = convs.length;
-
-      // Update sidebar
       const list = document.getElementById('vis-list');
       if(convs.length === 0) {
         list.innerHTML = `<div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:11.5px;line-height:1.6;">
@@ -1698,23 +1770,70 @@ function pollConversations() {
         </div>`;
         return;
       }
-
-      // Sort by lastSeen
       convs.sort((a,b) => new Date(b.lastSeen) - new Date(a.lastSeen));
-
       list.innerHTML = convs.map(c => {
         const lastMsg = c.messages.filter(m=>m.role==='user').slice(-1)[0];
-        const preview = lastMsg ? lastMsg.content.substring(0,30)+'...' : 'Browsing...';
+        const preview = lastMsg ? lastMsg.content.substring(0,28)+'...' : 'Browsing...';
         const isSelected = c.sessionId === selectedSessionId;
-        const initials = c.visitorName.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() || 'V';
         const timeSince = getTimeSince(c.lastSeen);
-        return `<div class="vis ${isSelected?'active':''}" onclick="selectConversation('${c.sessionId}')">
-          <div class="vis-name"><span class="dot-green"></span>${c.visitorName}</div>
-          <div class="vis-meta">${c.page}</div>
+        const isHot = c.recentlyActive; // Active in last 2 min
+        return `<div class="vis ${isSelected?'active':''}" onclick="selectConversation('${c.sessionId}')" style="${isHot?'border-left:3px solid #2C5F2E;':''}">
+          <div class="vis-name">
+            <span class="dot-green" style="${isHot?'background:#22c55e;animation:pulse 1s infinite;':'background:#aaa;'}"></span>
+            ${c.visitorName}
+            ${c.visitorEmail?'<span style="font-size:9px;color:#2C5F2E;margin-left:4px;">✉️</span>':''}
+            ${isHot?'<span style="font-size:9px;background:#dcfce7;color:#16a34a;padding:1px 5px;border-radius:10px;margin-left:4px;">LIVE</span>':''}
+          </div>
+          <div class="vis-meta">${c.page.substring(0,30)}</div>
+          <div class="vis-meta" style="font-size:9.5px;color:#888;">${c.source||'Direct'}</div>
           <div class="vis-meta" style="font-size:9.5px;color:#aaa;">${preview}</div>
-          <div class="vis-meta" style="font-size:9px;color:#bbb;">${timeSince}</div>
+          <div class="vis-meta" style="font-size:9px;color:#bbb;">${timeSince} · ${c.messageCount||0} msgs</div>
         </div>`;
       }).join('');
+    }).catch(() => {});
+}
+
+// Fetch real logs from server
+function fetchRealLogs() {
+  fetch(ADMIN_SERVER + '/admin/logs')
+    .then(r => r.json())
+    .then(d => {
+      const serverLogs = d.logs || [];
+      if(serverLogs.length > 0) {
+        logs = serverLogs.map(l => ({
+          name: l.visitorName || 'Visitor',
+          email: l.visitorEmail || '',
+          time: l.time || 'Recent',
+          preview: (l.messages.filter(m=>m.role==='user')[0]?.content || '').substring(0,60),
+          tags: [l.visitorEmail ? 'lead' : 'visitor', l.rating ? 'rated' : 'resolved'],
+          ord: '',
+          source: l.source || 'Direct',
+          rating: l.rating,
+          convo: l.messages.map(m => ({role: m.role==='assistant'?'b':'u', text: m.content||''}))
+        }));
+        renderLogs('all');
+      }
+    }).catch(() => {});
+}
+
+// Fetch analytics from server
+function fetchAnalytics() {
+  fetch(ADMIN_SERVER + '/admin/analytics')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('s-convos').textContent = d.total || 0;
+      document.getElementById('s-leads').textContent = d.withEmail || 0;
+      if(d.avgRating) document.getElementById('s-resolved').textContent = d.avgRating + '⭐';
+      // Show traffic sources
+      const tq = document.getElementById('top-questions');
+      if(d.sources && Object.keys(d.sources).length > 0) {
+        const sorted = Object.entries(d.sources).sort((a,b)=>b[1]-a[1]);
+        const total = sorted.reduce((s,[,v])=>s+v,0);
+        tq.innerHTML = sorted.slice(0,6).map(([src,cnt]) =>
+          `<div class="fr"><span class="fq">${src}</span><span class="fcnt">${cnt}</span>
+          <div class="fbar" style="width:${Math.round(cnt/total*80)}px;background:var(--brand);"></div></div>`
+        ).join('');
+      }
     }).catch(() => {});
 }
 
@@ -1729,18 +1848,12 @@ function selectConversation(sessionId) {
   selectedSessionId = sessionId;
   const conv = activeConversations[sessionId];
   if(!conv) return;
-
-  // Update header
   const initials = conv.visitorName.split(' ').map(w=>w[0]).join('').substring(0,2) || 'V';
   document.getElementById('c-avi').textContent = initials;
   document.getElementById('c-nm').textContent = conv.visitorName;
   document.getElementById('c-pg').textContent = conv.page;
   document.getElementById('ord-pill').style.display = 'none';
-
-  // Update currentVis for live mode
   currentVis = {nm: conv.visitorName, ini: initials, pg: conv.page, ord: 'null'};
-
-  // Show conversation in chat window
   const msgs = document.getElementById('msgs');
   msgs.innerHTML = '';
   conv.messages.forEach(m => {
@@ -1752,13 +1865,9 @@ function selectConversation(sessionId) {
     msgs.appendChild(d);
   });
   msgs.scrollTop = 99999;
-
-  // Update sidebar active state
   document.querySelectorAll('.vis').forEach(v => v.classList.remove('active'));
-  event.currentTarget && event.currentTarget.classList.add('active');
 }
 
-// Admin sends message to visitor via server
 async function sendAdminMessage(txt) {
   if(!selectedSessionId || !txt) return;
   await fetch(ADMIN_SERVER + '/admin/send', {
@@ -1772,7 +1881,6 @@ async function sendAdminMessage(txt) {
 
 /* ── INIT ── */
 window.addEventListener('load',()=>{
-  // Show empty state in chat
   document.getElementById('msgs').innerHTML=`
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);text-align:center;padding:40px 20px;gap:10px;">
       <div style="font-size:36px;">💬</div>
@@ -1784,6 +1892,16 @@ window.addEventListener('load',()=>{
   // Poll for real conversations every 5 seconds
   pollConversations();
   setInterval(pollConversations, 5000);
+  // Fetch logs and analytics every 30 seconds
+  fetchRealLogs();
+  fetchAnalytics();
+  setInterval(fetchRealLogs, 30000);
+  setInterval(fetchAnalytics, 30000);
+  // Update active visitors count in analytics
+  setInterval(()=>{
+    const el=document.getElementById('s-emails');
+    if(el) el.textContent=Object.keys(activeConversations).length;
+  }, 5000);
 });
 </script>
 </body>
