@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TablePadsPro — Admin Dashboard v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --brand:#2C5F2E;--brand-light:#e8f0e8;--brand-mid:#3d7a3f;--brand-dark:#1e4420;
+  --accent:#c8a96e;--accent-light:#f5eedd;
+  --text:#1a1a1a;--text-muted:#777;
+  --surface:#fff;--surface2:#f7f7f5;
+  --border:rgba(0,0,0,0.09);--radius:12px;
+}
+body{font-family:'DM Sans',sans-serif;background:#e9e9e6;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;}
+.app{background:var(--surface);border-radius:20px;box-shadow:0 8px 48px rgba(0,0,0,.14);width:100%;max-width:980px;overflow:hidden;display:flex;flex-direction:column;min-height:700px;}
+
+/* HEADER */
+.app-header{background:var(--brand-dark);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:8px;}
+.app-logo{display:flex;align-items:center;gap:10px;}
+.app-logo-text{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#fff;}
+.app-logo-sub{font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.status-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.8);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-mode-btn{padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
+.live-mode-btn.active{background:#ef4444;border-color:#ef4444;}
+.live-mode-btn:hover{background:rgba(255,255,255,.1);}
+
+/* TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--surface);padding:0 1rem;gap:0;overflow-x:auto;flex-shrink:0;}
+.tab{padding:10px 13px;font-size:11.5px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-top:none;border-left:none;border-right:none;background:none;white-space:nowrap;transition:color .15s,border-color .15s;}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand);}
+.tab:hover:not(.active){color:var(--text);}
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.panel.active{display:flex;}
+
+/* CHAT */
+.chat-wrap{display:flex;flex:1;min-height:580px;overflow:hidden;}
+.sidebar{width:185px;border-right:1px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;flex-shrink:0;}
+.sid-hd{padding:9px 12px;font-size:9.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);}
+.vis{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;}
+.vis:hover{background:#ececea;}
+.vis.active{background:var(--brand-light);}
+.vis-name{font-size:12px;font-weight:500;color:var(--text);}
+.vis-meta{font-size:10.5px;color:var(--text-muted);margin-top:1px;}
+.dot-green{display:inline-block;width:5px;height:5px;border-radius:50%;background:#22c55e;margin-right:4px;vertical-align:middle;}
+
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+.chat-hd{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.chat-hd-l{display:flex;align-items:center;gap:8px;}
+.avi{width:30px;height:30px;border-radius:50%;background:var(--brand-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--brand);flex-shrink:0;}
+.vis-nm{font-size:13px;font-weight:500;color:var(--text);}
+.vis-pg{font-size:10.5px;color:var(--text-muted);}
+.ord-pill{font-size:10.5px;padding:3px 10px;border-radius:20px;background:var(--accent-light);color:#7a5c28;font-weight:500;cursor:pointer;border:1px solid var(--accent);}
+
+/* LIVE MODE BADGE */
+.live-badge{display:none;padding:3px 10px;border-radius:20px;background:#ef4444;color:#fff;font-size:10.5px;font-weight:600;animation:pulse 1.5s infinite;}
+.live-badge.show{display:inline-flex;align-items:center;gap:4px;}
+
+.msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface2);}
+.msg{display:flex;gap:7px;max-width:90%;}
+.msg.u{align-self:flex-end;flex-direction:row-reverse;}
+.msg.b{align-self:flex-start;}
+.msg.admin-reply{align-self:flex-end;}
+.m-avi{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:600;flex-shrink:0;margin-top:2px;overflow:hidden;}
+.msg.b .m-avi{background:var(--brand-light);color:var(--brand);}
+.msg.u .m-avi{background:var(--accent-light);color:#7a5c28;}
+.msg.admin-reply .m-avi{background:#dbeafe;color:#1d4ed8;}
+.bub{padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.55;color:var(--text);}
+.msg.b .bub{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px;}
+.msg.u .bub{background:var(--brand);color:#fff;border-bottom-right-radius:4px;}
+.msg.admin-reply .bub{background:#1d4ed8;color:#fff;border-bottom-right-radius:4px;}
+.m-time{font-size:9.5px;color:var(--text-muted);margin-top:2px;}
+.msg.u .m-time,.msg.admin-reply .m-time{text-align:right;}
+
+/* Product card in chat */
+.prod-card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-top:6px;max-width:220px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.prod-card img{width:100%;height:110px;object-fit:cover;}
+.prod-card-body{padding:8px 10px;}
+.prod-card-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.prod-card-price{font-size:11.5px;color:var(--brand);font-weight:600;margin-bottom:6px;}
+.prod-card-btn{display:block;padding:6px;background:var(--brand);color:#fff;border-radius:6px;font-size:11.5px;font-weight:500;text-align:center;text-decoration:none;transition:background .15s;}
+.prod-card-btn:hover{background:var(--brand-mid);}
+
+.dot{width:5px;height:5px;border-radius:50%;background:#999;animation:bounce 1.2s ease-in-out infinite;display:inline-block;}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.chat-img{max-width:180px;max-height:140px;border-radius:8px;object-fit:cover;display:block;margin-top:5px;border:1px solid var(--border);}
+
+.qr-bar{display:flex;flex-wrap:wrap;gap:4px;padding:7px 12px 5px;background:var(--surface2);border-top:1px solid var(--border);flex-shrink:0;}
+.qr{padding:4px 10px;border:1px solid var(--brand);border-radius:20px;background:transparent;color:var(--brand);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
+.qr:hover{background:var(--brand);color:#fff;}
+
+/* Live reply area */
+.live-reply-area{padding:8px 12px;background:#eff6ff;border-top:2px solid #3b82f6;display:none;flex-shrink:0;}
+.live-reply-area.show{display:block;}
+.live-reply-label{font-size:10.5px;font-weight:600;color:#1d4ed8;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.live-reply-row{display:flex;gap:6px;}
+.live-reply-input{flex:1;padding:7px 10px;border:1px solid #93c5fd;border-radius:8px;font-size:12.5px;font-family:'DM Sans',sans-serif;outline:none;background:#fff;}
+.live-reply-input:focus{border-color:#3b82f6;}
+.live-reply-send{padding:7px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.live-reply-send:hover{background:#1e40af;}
+
+.inp-area{padding:9px 12px;border-top:1px solid var(--border);display:flex;gap:7px;align-items:flex-end;background:var(--surface);flex-shrink:0;}
+#ci{flex:1;resize:none;border:1px solid #d0d0cc;border-radius:9px;padding:7px 11px;font-size:13px;font-family:'DM Sans',sans-serif;line-height:1.45;min-height:36px;max-height:90px;color:var(--text);background:var(--surface);outline:none;}
+#ci:focus{border-color:var(--brand);}
+.upload-btn{width:33px;height:33px;border-radius:8px;border:1px solid #d0d0cc;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#888;font-size:15px;flex-shrink:0;}
+.upload-btn:hover{border-color:var(--brand);color:var(--brand);}
+#img-input{display:none;}
+.sbtn{padding:7px 16px;background:var(--brand);color:#fff;border:none;border-radius:9px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+.sbtn:disabled{background:#aaa;cursor:not-allowed;}
+.img-preview-bar{padding:5px 12px;background:#f0f0ec;border-top:1px solid var(--border);display:none;align-items:center;gap:6px;flex-shrink:0;}
+.img-preview-bar.show{display:flex;}
+.img-thumb{width:28px;height:28px;border-radius:5px;object-fit:cover;}
+.img-preview-name{font-size:11px;color:var(--text-muted);flex:1;}
+.img-remove{background:none;border:none;cursor:pointer;color:#999;font-size:14px;}
+.lead-form{background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin:0 12px 6px;box-shadow:0 2px 8px rgba(0,0,0,.06);flex-shrink:0;}
+.lf-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px;}
+.lf-input{width:100%;padding:7px 10px;border:1px solid #d0d0cc;border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;outline:none;margin-bottom:7px;}
+.lf-input:focus{border-color:var(--brand);}
+.lf-btn{padding:7px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%;}
+.info-card{background:var(--accent-light);border:1px solid var(--accent);border-radius:9px;padding:8px 11px;margin:0 12px 6px;font-size:11.5px;flex-shrink:0;}
+.ic-lbl{color:#7a5c28;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.ic-row{display:flex;justify-content:space-between;color:#5a4018;margin-top:3px;font-size:11.5px;}
+
+/* TRAINING */
+.train-layout{display:flex;flex:1;overflow:hidden;}
+.train-nav{width:170px;border-right:1px solid var(--border);padding:10px 8px;display:flex;flex-direction:column;gap:2px;background:var(--surface2);flex-shrink:0;}
+.tnav{padding:8px 11px;border-radius:7px;font-size:12.5px;color:var(--text-muted);cursor:pointer;transition:all .12s;}
+.tnav:hover{background:#ececea;color:var(--text);}
+.tnav.active{background:var(--brand-light);color:var(--brand);font-weight:500;}
+.train-content{flex:1;padding:18px;overflow-y:auto;}
+.ts{display:none;}
+.ts.active{display:block;}
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.fl{margin-bottom:12px;}
+.fl-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.fi{width:100%;padding:7px 11px;border:1px solid #d0d0cc;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;outline:none;}
+.fi:focus{border-color:var(--brand);}
+textarea.fi{min-height:80px;resize:vertical;line-height:1.5;}
+.add-btn{padding:7px 16px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:12.5px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.qa-list{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
+.qa-item{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;position:relative;}
+.qa-q{font-size:12.5px;font-weight:500;color:var(--text);}
+.qa-a{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.5;}
+.qa-del{position:absolute;top:8px;right:10px;background:none;border:none;font-size:14px;color:var(--text-muted);cursor:pointer;}
+.qa-del:hover{color:#c0392b;}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.tog-lbl{font-size:13px;color:var(--text);}
+.tog-desc{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.tog{width:36px;height:20px;border-radius:20px;background:#d0d0cc;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none;}
+.tog.on{background:var(--brand);}
+.tog::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2);}
+.tog.on::after{transform:translateX(16px);}
+.save-btn{margin-top:16px;padding:8px 20px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+/* File upload training */
+.upload-zone{border:2px dashed #d0d0cc;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;margin-top:10px;}
+.upload-zone:hover{border-color:var(--brand);}
+.upload-zone-icon{font-size:28px;margin-bottom:8px;}
+.upload-zone-text{font-size:13px;color:var(--text-muted);line-height:1.5;}
+.upload-zone input{display:none;}
+.uploaded-files{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+.uploaded-file{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:12.5px;}
+.uploaded-file-icon{font-size:18px;}
+.uploaded-file-name{flex:1;color:var(--text);}
+.uploaded-file-del{background:none;border:none;cursor:pointer;color:#999;font-size:14px;}
+
+/* LOGS */
+.logs-wrap{padding:16px;overflow-y:auto;flex:1;}
+.log-filter{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+.log-filter-left{display:flex;gap:5px;flex-wrap:wrap;}
+.lf-tag{padding:4px 11px;border-radius:20px;font-size:11.5px;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;background:transparent;font-family:'DM Sans',sans-serif;}
+.lf-tag.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+.clear-btn{padding:4px 12px;border-radius:20px;font-size:11.5px;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;background:transparent;font-family:'DM Sans',sans-serif;}
+.clear-btn:hover{background:#dc2626;color:#fff;}
+.log-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.log-item:hover{border-color:var(--brand);}
+.log-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;gap:6px;}
+.log-name{font-size:12.5px;font-weight:500;color:var(--text);}
+.log-time{font-size:10.5px;color:var(--text-muted);white-space:nowrap;}
+.log-preview{font-size:12px;color:var(--text-muted);line-height:1.45;}
+.log-tags{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;align-items:center;}
+.ltag{padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;}
+.ltag.resolved{background:var(--brand-light);color:var(--brand);}
+.ltag.lead{background:var(--accent-light);color:#7a5c28;}
+.ltag.pending{background:#fef3e2;color:#8f5c1a;}
+.email-status{display:flex;align-items:center;gap:4px;font-size:10.5px;color:#16a34a;margin-top:5px;}
+.email-dot{width:4px;height:4px;border-radius:50%;background:#16a34a;}
+.export-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--text);font-size:12.5px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+.export-btn:hover{border-color:var(--brand);color:var(--brand);}
+
+/* ANALYTICS */
+.ana-wrap{padding:16px;overflow-y:auto;flex:1;}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;}
+.mc{background:var(--surface2);border-radius:9px;padding:12px 14px;border:1px solid var(--border);}
+.mc-lbl{font-size:9.5px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.mc-val{font-size:24px;font-weight:500;color:var(--text);font-family:'Cormorant Garamond',serif;}
+.mc-chg{font-size:10.5px;color:#16a34a;margin-top:3px;}
+.chart-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
+.cc-lbl{font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:10px;}
+.bars{display:flex;align-items:flex-end;gap:5px;height:90px;}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px;}
+.bday{font-size:9.5px;color:var(--text-muted);}
+.faq-tbl{border:1px solid var(--border);border-radius:9px;overflow:hidden;}
+.fr{display:flex;align-items:center;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12.5px;}
+.fr:last-child{border-bottom:none;}
+.fr:hover{background:var(--surface2);}
+.fq{flex:1;color:var(--text);}
+.fcnt{font-size:11px;color:var(--text-muted);min-width:28px;text-align:right;}
+.fbar{height:3px;border-radius:2px;margin-left:8px;background:var(--brand-light);}
+
+/* SETTINGS */
+.set-layout{display:flex;flex:1;overflow:hidden;}
+.set-nav{width:170px;border-right:1px solid var(--border);padding:10px 8px;display:flex;flex-direction:column;gap:2px;background:var(--surface2);flex-shrink:0;}
+.snav{padding:8px 11px;border-radius:7px;font-size:12.5px;color:var(--text-muted);cursor:pointer;transition:all .12s;}
+.snav:hover{background:#ececea;color:var(--text);}
+.snav.active{background:var(--brand-light);color:var(--brand);font-weight:500;}
+.set-content{flex:1;padding:18px;overflow-y:auto;}
+.ss{display:none;}
+.ss.active{display:block;}
+.info-box{margin-top:14px;padding:11px 13px;background:var(--brand-light);border-radius:9px;font-size:12px;color:var(--brand);line-height:1.6;border:1px solid rgba(44,95,46,.2);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:540px;max-height:84vh;display:flex;flex-direction:column;box-shadow:0 16px 60px rgba(0,0,0,.22);transform:translateY(10px);transition:transform .2s;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-shrink:0;}
+.modal-title{font-size:14px;font-weight:600;color:var(--text);}
+.modal-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.modal-close{width:26px;height:26px;border-radius:50%;border:none;background:var(--surface2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+.modal-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;background:var(--surface2);}
+.modal-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap;align-items:center;background:#fff;border-radius:0 0 14px 14px;}
+.m-msg{display:flex;gap:6px;max-width:88%;}
+.m-msg.u{align-self:flex-end;flex-direction:row-reverse;}
+.m-msg.b{align-self:flex-start;}
+.m-m-avi{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:600;flex-shrink:0;margin-top:2px;}
+.m-msg.b .m-m-avi{background:var(--brand-light);color:var(--brand);}
+.m-msg.u .m-m-avi{background:var(--accent-light);color:#7a5c28;}
+.m-bub{padding:7px 11px;border-radius:12px;font-size:12.5px;line-height:1.5;color:var(--text);}
+.m-msg.b .m-bub{background:#fff;border:1px solid var(--border);border-bottom-left-radius:4px;}
+.m-msg.u .m-bub{background:var(--brand);color:#fff;border-bottom-right-radius:4px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:11px 16px;border-radius:9px;font-size:12.5px;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:2000;display:flex;align-items:center;gap:7px;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;max-width:320px;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* Elliot photo */
+.elliot-photo{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+/* Mobile responsive */
+@media(max-width:640px){
+  body{padding:10px;}
+  .app{border-radius:12px;min-height:auto;}
+  .sidebar{width:130px;}
+  .tab{padding:8px 10px;font-size:10.5px;}
+  .bub{font-size:12px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="app-header">
+    <div class="app-logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="6" fill="rgba(255,255,255,.15)"/><rect x="5" y="12" width="16" height="2.5" rx="1.25" fill="#fff"/><rect x="6" y="7.5" width="13" height="2" rx="1" fill="rgba(255,255,255,.65)"/><rect x="6" y="16.5" width="13" height="2" rx="1" fill="rgba(255,255,255,.65)"/></svg>
+      <div>
+        <div class="app-logo-text">Table Pads Pro</div>
+        <div class="app-logo-sub">AI Assistant Dashboard v2</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill"><div class="status-dot"></div>Live · 3 visitors</div>
+      <button class="live-mode-btn" id="live-mode-btn" onclick="toggleLiveMode()">🎙 Go Live</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="sw('chat')">💬 Live Chat</button>
+    <button class="tab" onclick="sw('training')">🎓 Training</button>
+    <button class="tab" onclick="sw('logs')">📋 Logs</button>
+    <button class="tab" onclick="sw('analytics')">📊 Analytics</button>
+    <button class="tab" onclick="sw('settings')">⚙️ Settings</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="panel active" id="panel-chat">
+    <div class="chat-wrap">
+      <div class="sidebar">
+        <div class="sid-hd">Active visitors</div>
+        <div class="vis active" onclick="selVis(this,'Jennifer M.','JM','Custom Table Pads','#TP-2847')">
+          <div class="vis-name"><span class="dot-green"></span>Jennifer M.</div>
+          <div class="vis-meta">Custom Table Pads</div>
+        </div>
+        <div class="vis" onclick="selVis(this,'Robert K.','RK','Checkout','#TP-2851')">
+          <div class="vis-name"><span class="dot-green"></span>Robert K.</div>
+          <div class="vis-meta">Checkout</div>
+        </div>
+        <div class="vis" onclick="selVis(this,'Sandra L.','SL','Home Page','null')">
+          <div class="vis-name"><span class="dot-green"></span>Sandra L.</div>
+          <div class="vis-meta">Home page</div>
+        </div>
+      </div>
+      <div class="chat-main">
+        <div class="chat-hd">
+          <div class="chat-hd-l">
+            <div class="avi" id="c-avi">JM</div>
+            <div>
+              <div class="vis-nm" id="c-nm">Jennifer M.</div>
+              <div class="vis-pg" id="c-pg">Custom Table Pads</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="live-badge" id="live-badge">🔴 LIVE MODE</span>
+            <button class="ord-pill" id="ord-pill" onclick="showOrder()">Order #TP-2847</button>
+          </div>
+        </div>
+        <div class="msgs" id="msgs"></div>
+        <div id="lead-slot"></div>
+        <div class="img-preview-bar" id="img-preview-bar">
+          <img id="img-thumb" class="img-thumb" src="" alt=""/>
+          <span class="img-preview-name" id="img-name"></span>
+          <button class="img-remove" onclick="clearImg()">✕</button>
+        </div>
+        <div class="qr-bar">
+          <button class="qr" onclick="triggerFlow('kit')">📬 Pattern Kit</button>
+          <button class="qr" onclick="triggerFlow('swatch')">🎨 Color Swatches</button>
+          <button class="qr" onclick="triggerFlow('inhome')">🏠 In-Home Visit</button>
+          <button class="qr" onclick="sq('How much do table pads cost?')">💰 Pricing</button>
+          <button class="qr" onclick="sq('I have an oval table with 2 leaves')">Oval table</button>
+          <button class="qr" onclick="sq('What is the status of my order?')">Order status</button>
+          <button class="qr" onclick="sq('Do you ship to Canada?')">Shipping</button>
+        </div>
+        <!-- LIVE REPLY AREA (admin types here when in live mode) -->
+        <div class="live-reply-area" id="live-reply-area">
+          <div class="live-reply-label">✏️ You are in Live Mode — your reply goes directly to the customer</div>
+          <div class="live-reply-row">
+            <input class="live-reply-input" id="live-reply-input" placeholder="Type your reply to the customer…" onkeydown="if(event.key==='Enter')sendLiveReply()"/>
+            <button class="live-reply-send" onclick="sendLiveReply()">Send</button>
+          </div>
+        </div>
+        <div class="inp-area">
+          <textarea id="ci" placeholder="Simulate customer message…" rows="1" onkeydown="hk(event)" oninput="ar(this)"></textarea>
+          <button class="upload-btn" onclick="document.getElementById('img-input').click()" title="Attach photo">📎</button>
+          <input type="file" id="img-input" accept="image/*" onchange="handleImg(this)"/>
+          <button class="sbtn" id="sbtn" onclick="sendMsg()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINING -->
+  <div class="panel" id="panel-training">
+    <div class="train-layout">
+      <div class="train-nav">
+        <div class="tnav active" onclick="swT(this,'qa')">📝 Q&amp;A</div>
+        <div class="tnav" onclick="swT(this,'files')">📁 Upload Files</div>
+        <div class="tnav" onclick="swT(this,'products')">🛍 Products</div>
+        <div class="tnav" onclick="swT(this,'persona')">🧑 Persona</div>
+        <div class="tnav" onclick="swT(this,'flows')">⚡ Flows</div>
+      </div>
+      <div class="train-content">
+
+        <div class="ts active" id="t-qa">
+          <div class="sec-title">Teach answers</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.55;">Add Q&A pairs — Elliot uses these as authoritative answers instantly.</p>
+          <div class="fl"><div class="fl-label">Customer question</div><input class="fi" id="new-q" placeholder="e.g. Do you offer overnight shipping?"/></div>
+          <div class="fl"><div class="fl-label">Ideal answer</div><textarea class="fi" id="new-a" placeholder="Type the perfect answer…"></textarea></div>
+          <button class="add-btn" onclick="addQA()">+ Add Q&amp;A pair</button>
+          <div class="qa-list" id="qa-list"></div>
+        </div>
+
+        <div class="ts" id="t-files">
+          <div class="sec-title">Upload knowledge files</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.55;">Upload PDFs, pricing sheets, product specs, or any document. Elliot will learn from them.</p>
+          <label class="upload-zone">
+            <input type="file" multiple accept=".pdf,.txt,.doc,.docx,.csv,.xlsx" onchange="handleFileUpload(this)"/>
+            <div class="upload-zone-icon">📄</div>
+            <div class="upload-zone-text"><strong>Click to upload files</strong><br/>PDF, Word, Excel, CSV, TXT supported</div>
+          </label>
+          <div class="uploaded-files" id="uploaded-files"></div>
+          <div class="info-box" style="margin-top:14px;">💡 <strong>Tip:</strong> Upload your pricing sheet, product catalog, FAQ document, or any internal guide. The more you teach Elliot, the smarter his answers become.</div>
+        </div>
+
+        <div class="ts" id="t-products">
+          <div class="sec-title">Product catalog</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.55;">These products are shown to customers with direct buy links when they ask about specific items.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;" id="product-list">
+          </div>
+        </div>
+
+        <div class="ts" id="t-persona">
+          <div class="sec-title">Bot persona</div>
+          <div class="fl"><div class="fl-label">Assistant name</div><input class="fi" id="bot-name" value="Elliot"/></div>
+          <div class="fl"><div class="fl-label">Persona instructions</div><textarea class="fi" id="persona-txt" style="min-height:120px;">You are Elliot, a warm and knowledgeable senior customer advisor for Table Pads Pro. You speak with confidence and genuine care. Keep answers short, friendly, and to the point. You have a subtle sales approach — helpful first, never pushy. Always guide customers toward the right product naturally.</textarea></div>
+          <button class="save-btn" onclick="showToast('✅','Persona saved!')">Save persona</button>
+        </div>
+
+        <div class="ts" id="t-flows">
+          <div class="sec-title">Chat flows</div>
+          <div class="tog-row"><div><div class="tog-lbl">Ask name + email after first message</div><div class="tog-desc">Collect leads automatically</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Email transcript after conversation ends</div><div class="tog-desc">Sent to tablepadspro@gmail.com</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Show product cards when item mentioned</div><div class="tog-desc">Direct buy links appear in chat</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Pattern kit flow for oval tables</div><div class="tog-desc">Ask for address when oval is mentioned</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Auto-open widget after 5 seconds</div><div class="tog-desc">With welcome chime</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Exit intent prompt</div><div class="tog-desc">Engage visitors about to leave</div></div><button class="tog" onclick="this.classList.toggle('on')"></button></div>
+          <button class="save-btn" onclick="showToast('✅','Flows saved!')">Save flows</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div class="panel" id="panel-logs">
+    <div class="logs-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);">Conversation logs</div>
+        <button class="export-btn" onclick="exportCSV()">📥 Export CSV</button>
+      </div>
+      <div class="log-filter">
+        <div class="log-filter-left">
+          <button class="lf-tag active" onclick="filterL(this,'all')">All</button>
+          <button class="lf-tag" onclick="filterL(this,'resolved')">Resolved</button>
+          <button class="lf-tag" onclick="filterL(this,'lead')">Leads</button>
+          <button class="lf-tag" onclick="filterL(this,'pending')">Pending</button>
+        </div>
+        <button class="clear-btn" onclick="clearLogs()">🗑 Clear all logs</button>
+      </div>
+      <div id="log-list"></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="panel" id="panel-analytics">
+    <div class="ana-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);">Analytics</div>
+        <button class="clear-btn" onclick="clearAnalytics()">🗑 Reset analytics</button>
+      </div>
+      <div class="metrics" id="metrics-grid">
+        <div class="mc"><div class="mc-lbl">Conversations</div><div class="mc-val" id="s-convos">0</div><div class="mc-chg">this session</div></div>
+        <div class="mc"><div class="mc-lbl">Bot resolved</div><div class="mc-val" id="s-resolved">0%</div><div class="mc-chg">no escalations</div></div>
+        <div class="mc"><div class="mc-lbl">Leads captured</div><div class="mc-val" id="s-leads">0</div><div class="mc-chg">this session</div></div>
+        <div class="mc"><div class="mc-lbl">Avg response</div><div class="mc-val">~1s</div><div class="mc-chg">simulated</div></div>
+        <div class="mc"><div class="mc-lbl">Emails logged</div><div class="mc-val" id="s-emails">0</div><div class="mc-chg">100% logged</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-lbl">Daily conversations (sample)</div>
+        <div class="bars" id="ana-bars"></div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-lbl">Top customer questions this session</div>
+        <div class="faq-tbl" id="top-questions">
+          <div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">No conversations yet</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="panel-settings">
+    <div class="set-layout">
+      <div class="set-nav">
+        <div class="snav active" onclick="swS(this,'gen')">General</div>
+        <div class="snav" onclick="swS(this,'email')">Email</div>
+        <div class="snav" onclick="swS(this,'server')">Server</div>
+      </div>
+      <div class="set-content">
+        <div class="ss active" id="s-gen">
+          <div class="sec-title">General settings</div>
+          <div class="fl"><div class="fl-label">Bot name</div><input class="fi" value="Elliot"/></div>
+          <div class="fl"><div class="fl-label">Notification email</div><input class="fi" value="tablepadspro@gmail.com"/></div>
+          <div class="tog-row"><div><div class="tog-lbl">Enable chatbot on storefront</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Allow image uploads in chat</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Show product cards with buy links</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <button class="save-btn" onclick="showToast('✅','Settings saved!')">Save settings</button>
+        </div>
+        <div class="ss" id="s-email">
+          <div class="sec-title">Email logging</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">Every conversation is logged and emailed after it ends.</p>
+          <div class="fl"><div class="fl-label">Send transcripts to</div><input class="fi" value="tablepadspro@gmail.com"/></div>
+          <div class="fl"><div class="fl-label">Email subject format</div><input class="fi" value="[TablePadsPro] {{visitor_name}} — {{date}}"/></div>
+          <div class="tog-row"><div><div class="tog-lbl">Include full transcript</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Include customer name &amp; email</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="tog-row"><div><div class="tog-lbl">Instant alert for new leads</div></div><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
+          <div class="info-box">✉️ In the live Shopify app, emails are sent via your configured SMTP or SendGrid. This dashboard simulates all logging.</div>
+          <button class="save-btn" onclick="showToast('✅','Email settings saved!')">Save email settings</button>
+        </div>
+        <div class="ss" id="s-server">
+          <div class="sec-title">Server connection</div>
+          <div class="fl"><div class="fl-label">Backend server URL</div><input class="fi" id="server-url" value="https://tablepadspro-chatbot-production.up.railway.app"/></div>
+          <button class="add-btn" onclick="testServer()" style="margin-bottom:10px;">🔌 Test connection</button>
+          <div id="server-status" style="font-size:12.5px;color:var(--text-muted);margin-top:6px;"></div>
+          <div class="info-box" style="margin-top:14px;">🔐 Your OpenRouter API key is stored securely on Render — never in this file. Update it via Render's Environment Variables panel.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="conv-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <div><div class="modal-title" id="modal-title"></div><div class="modal-sub" id="modal-sub"></div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-icon"></span><span id="toast-msg"></span></div>
+
+<script>
+const SERVER = 'https://tablepadspro-chatbot-production.up.railway.app';
+
+/* ── PRODUCTS from tablepadspro.com ── */
+const PRODUCTS = [
+  {name:'Rectangular Table Pad',price:'From $185',url:'https://tablepadspro.com/products/rectangular-table-pad-185',img:'https://tablepadspro.com/cdn/shop/files/Rectangular_table_pad_Birch.png?v=1776293896&width=400',keys:['rectangular','rectangle','square','dining table pad']},
+  {name:'Custom Table Pad (Oval/Curved)',price:'From $199',url:'https://tablepadspro.com/products/custom-table-pad-279',img:'https://tablepadspro.com/cdn/shop/files/Curvedendstablepad_1.jpg?v=1747989325&width=400',keys:['oval','egg','curved','racetrack']},
+  {name:'Round Table Pad',price:'From $195',url:'https://tablepadspro.com/products/round-table-pad',img:'https://tablepadspro.com/cdn/shop/files/72_Round_table.jpg?v=1757386861&width=400',keys:['round','circle','circular']},
+  {name:'Hexagon & Octagon Table Pad',price:'From $215',url:'https://tablepadspro.com/products/hexagon-octagon-table-pad-copy',img:'https://tablepadspro.com/cdn/shop/files/AP1GczNR2RUaGda7VwJJxuzm-JrF-dVz.png?v=1776276020&width=400',keys:['hexagon','octagon','hex','oct']},
+  {name:'Custom Table Pad Extender',price:'$289',url:'https://tablepadspro.com/products/custom-table-pad-extender',img:'https://tablepadspro.com/cdn/shop/files/AP1GczOUs4cYzo6q-_9S1ZSzHii0btN9.png?v=1760914219&width=400',keys:['extender','extend','bigger','more seats','extra space']},
+  {name:'Round Table Pad Extender',price:'$279',url:'https://tablepadspro.com/products/table-extender',img:'https://tablepadspro.com/cdn/shop/files/Round_Extender.jpg?v=1760902691&width=400',keys:['round extender']},
+  {name:'Extension Leaf Pad',price:'$145',url:'https://tablepadspro.com/products/extension-leaf-pad',img:'https://tablepadspro.com/cdn/shop/files/IMG_2036.jpg?v=1760919105&width=400',keys:['leaf pad','leaf protection','extension leaf']},
+  {name:'Elite Collection Table Pad',price:'$349',url:'https://tablepadspro.com/products/elite-collection-table-pad',img:'https://tablepadspro.com/cdn/shop/files/IMG_2038.jpg?v=1748609301&width=400',keys:['elite','premium','high end','luxury']},
+  {name:'Buffet & Server Pads',price:'$199',url:'https://tablepadspro.com/products/buffet-server-pads',img:'https://tablepadspro.com/cdn/shop/files/5foramazon_1.jpg?v=1747992567&width=400',keys:['buffet','server','sideboard','console']},
+  {name:'Coffee, Cocktail & End Table Pad',price:'$189',url:'https://tablepadspro.com/products/coffee-cocktail-or-end-table-pad',img:'https://tablepadspro.com/cdn/shop/files/Coffee_table.png?v=1768593422&width=400',keys:['coffee table','cocktail','end table','small table']},
+  {name:'Pool Table Protective Pad',price:'$399',url:'https://tablepadspro.com/products/pool-table-protector-pad',img:'https://tablepadspro.com/cdn/shop/files/PHOTO-2025-12-25-10-51-08.jpg?v=1766693721&width=400',keys:['pool table','billiard','pool']},
+  {name:'Game Table Protective Pad',price:'$399',url:'https://tablepadspro.com/products/game-table-protective-pad',img:'https://tablepadspro.com/cdn/shop/files/PHOTO-2025-12-25-10-48-29_e2259814-adaf-406f-aaae-739da5375165.jpg?v=1766693272&width=400',keys:['game table','ping pong','shuffleboard','air hockey']},
+  {name:'Conference Table Protector Pad',price:'$449',url:'https://tablepadspro.com/products/conference-table-protector-pad',img:'https://tablepadspro.com/cdn/shop/files/AE7C09B1-1973-4553-8E73-CD0FA819634D_1.jpg?v=1747995100&width=400',keys:['conference','office','boardroom','meeting room']},
+  {name:'Table Pad Storage Bags',price:'$45',url:'https://tablepadspro.com/products/table-pad-storage-bags',img:'https://tablepadspro.com/cdn/shop/files/image_4_4.png?v=1747993365&width=400',keys:['storage bag','bag','store']},
+  {name:'Desk Mat / Pad',price:'$85',url:'https://tablepadspro.com/products/desk-mat-pad',img:'https://tablepadspro.com/cdn/shop/files/Untitled_design_17.png?v=1748247986&width=400',keys:['desk','desk mat','desk pad','office desk']},
+];
+
+/* ── SAMPLE ORDERS (for order status lookup) ── */
+const ORDERS = [
+  {id:'TP-2847',name:'Jennifer M.',status:'In production',shipped:false,eta:'June 2–5',total:'$289.00',item:'Custom Oval Table Pad — Mahogany'},
+  {id:'TP-2851',name:'Robert K.',status:'Shipped',shipped:true,tracking:'1Z999AA10123456784',carrier:'UPS',eta:'Delivered May 3',total:'$349.00',item:'Elite Collection Table Pad'},
+  {id:'TP-2844',name:'Tom Garfield',status:'Delivered',shipped:true,tracking:'1Z999AA10123456785',carrier:'UPS',eta:'Delivered Apr 28',total:'$520.00',item:'Rectangular Table Pad — Walnut'},
+  {id:'TP-2839',name:'Carol Simms',status:'Processing',shipped:false,eta:'June 10–15',total:'$195.00',item:'Round Table Pad — Ivory'},
+];
+
+/* ── LINK HELPERS ── */
+const lnk=(url,label)=>`<a href="${url}" target="_blank" style="color:var(--brand);text-decoration:underline;">${label||url}</a>`;
+const ph=(n)=>`<a href="tel:+1${n.replace(/\D/g,'')}" style="color:var(--brand);font-weight:500;">${n}</a>`;
+const ml=(a)=>`<a href="mailto:${a}" style="color:var(--brand);">${a}</a>`;
+
+/* ── STATE ── */
+let history=[], loading=false, leadCaptured=false, pendingImg=null;
+let flow=null, swatchAddress='', visitorName='';
+let liveMode=false;
+let currentVis={nm:'Jennifer M.',ini:'JM',pg:'Custom Table Pads',ord:'#TP-2847'};
+let orderShown=false;
+let sessionStats={convos:0,leads:0,emails:0,questions:[]};
+
+let qaList=[
+  {q:'Do you offer table extenders?',a:'Yes! Custom extenders to match your existing pad — they connect magnetically and store easily.'},
+  {q:'Can I get a rush order?',a:'Yes! Rush processing ships within 3–5 business days for an extra fee. Call 888-929-4940 to arrange.'},
+  {q:'What materials are used?',a:'Premium vinyl top (heat resistant to 600°F), soft velvet backing, dense fiberboard core, magnetic connectors.'},
+  {q:'Is it safe for antique tables?',a:'Absolutely. Soft velvet backing, no adhesives, fully breathable — trusted by antique collectors for decades.'},
+];
+
+let logs=[
+  {name:'Patricia Webb',email:'pwebb@email.com',time:'Today 11:42 AM',preview:'Oval table — pattern kit requested.',tags:['lead','resolved'],ord:'',convo:[{role:'b',text:"Hi! I'm Elliot. How can I help?"},{role:'u',text:'I have an oval table'},{role:'b',text:'Great! For oval tables we need a tracing. Could I have your mailing address to send the free kit?'},{role:'u',text:'45 Maple Drive, Woodmere NY 11598'},{role:'b',text:'Perfect! Kit is on its way to 45 Maple Drive! 🎉'}]},
+  {name:'Tom Garfield',email:'tom.g@yahoo.com',time:'Today 10:18 AM',preview:'Pricing for 72" rectangular table.',tags:['lead','resolved'],ord:'#TP-2844',convo:[{role:'b',text:"Hi! I'm Elliot. How can I help?"},{role:'u',text:'Price for 42x72 table?'},{role:'b',text:'For that size, $350–$550 depending on color. Want a free exact quote?'}]},
+  {name:'Unknown visitor',email:'',time:'Yesterday 3:55 PM',preview:'Asked about care and cleaning.',tags:['resolved'],ord:'',convo:[{role:'b',text:"Hi! I'm Elliot."},{role:'u',text:'How do I clean my table pad?'},{role:'b',text:'Easy — wipe with damp cloth + mild soap. No bleach. Store flat. Lasts 20–30 years!'}]},
+];
+
+let uploadedFiles=[];
+
+/* ── ELLIOT PHOTO SVG (realistic mature man) ── */
+function elliotSVG(size=28){
+  return`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">
+  <circle cx="${size/2}" cy="${size/2}" r="${size/2}" fill="#2C5F2E"/>
+  <path d="M${size*.08} ${size} Q${size*.08} ${size*.72} ${size/2} ${size*.72} Q${size*.92} ${size*.72} ${size*.92} ${size}Z" fill="#1a2e1b"/>
+  <path d="M${size*.42} ${size*.72} L${size/2} ${size*.82} L${size*.58} ${size*.72}" fill="#fff"/>
+  <rect x="${size*.44}" y="${size*.62}" width="${size*.12}" height="${size*.11}" rx="${size*.04}" fill="#c8845a"/>
+  <ellipse cx="${size/2}" cy="${size*.46}" rx="${size*.22}" ry="${size*.26}" fill="#c8845a"/>
+  <path d="M${size*.28} ${size*.46} Q${size*.28} ${size*.2} ${size/2} ${size*.19} Q${size*.72} ${size*.2} ${size*.72} ${size*.46}" fill="#4a4a4a"/>
+  <path d="M${size*.28} ${size*.44} Q${size*.26} ${size*.33} ${size*.32} ${size*.26}" stroke="#c0c0c0" stroke-width="${size*.04}" stroke-linecap="round" fill="none"/>
+  <path d="M${size*.72} ${size*.44} Q${size*.74} ${size*.33} ${size*.68} ${size*.26}" stroke="#c0c0c0" stroke-width="${size*.04}" stroke-linecap="round" fill="none"/>
+  <path d="M${size*.35} ${size*.38} Q${size*.42} ${size*.34} ${size/2} ${size*.38}" stroke="#3a3a3a" stroke-width="${size*.035}" stroke-linecap="round" fill="none"/>
+  <path d="M${size/2} ${size*.38} Q${size*.58} ${size*.34} ${size*.65} ${size*.38}" stroke="#3a3a3a" stroke-width="${size*.035}" stroke-linecap="round" fill="none"/>
+  <ellipse cx="${size*.4}" cy="${size*.44}" rx="${size*.065}" ry="${size*.055}" fill="#fff"/>
+  <ellipse cx="${size*.6}" cy="${size*.44}" rx="${size*.065}" ry="${size*.055}" fill="#fff"/>
+  <circle cx="${size*.413}" cy="${size*.447}" r="${size*.033}" fill="#3a2008"/>
+  <circle cx="${size*.613}" cy="${size*.447}" r="${size*.033}" fill="#3a2008"/>
+  <path d="M${size*.37} ${size*.56} Q${size/2} ${size*.64} ${size*.63} ${size*.56}" stroke="#904030" stroke-width="${size*.03}" fill="none" stroke-linecap="round"/>
+  <ellipse cx="${size*.3}" cy="${size*.52}" rx="${size*.07}" ry="${size*.04}" fill="#d4704a" opacity=".15"/>
+  <ellipse cx="${size*.7}" cy="${size*.52}" rx="${size*.07}" ry="${size*.04}" fill="#d4704a" opacity=".15"/>
+  <ellipse cx="${size*.26}" cy="${size*.48}" rx="${size*.055}" ry="${size*.08}" fill="#b8745a"/>
+  <ellipse cx="${size*.74}" cy="${size*.48}" rx="${size*.055}" ry="${size*.08}" fill="#b8745a"/>
+</svg>`;
+}
+
+/* ── PRODUCT CARD HTML ── */
+function productCardHTML(product){
+  return`<div class="prod-card">
+    <img src="${product.img}" alt="${product.name}" onerror="this.style.display='none'"/>
+    <div class="prod-card-body">
+      <div class="prod-card-name">${product.name}</div>
+      <div class="prod-card-price">${product.price}</div>
+      <a href="${product.url}" target="_blank" class="prod-card-btn">Order Now →</a>
+    </div>
+  </div>`;
+}
+
+function findProduct(txt){
+  const lower=txt.toLowerCase();
+  return PRODUCTS.find(p=>p.keys.some(k=>lower.includes(k)));
+}
+
+/* ── ORDER LOOKUP ── */
+function lookupOrder(txt){
+  const lower=txt.toLowerCase();
+  // Check by order number
+  const orderMatch=txt.match(/TP-?\d{4}/i);
+  if(orderMatch){
+    const id=orderMatch[0].toUpperCase().replace('TP','TP-').replace('TP--','TP-');
+    const order=ORDERS.find(o=>o.id===id||o.id===id.replace('-',''));
+    if(order) return order;
+  }
+  // Check by name
+  return ORDERS.find(o=>lower.includes(o.name.toLowerCase().split(' ')[0].toLowerCase()));
+}
+
+/* ── PRICING FORMULA ── */
+function roundUp(val){ return Math.ceil(val); }
+
+function calcTablePadPrice(width, length, leaves=[], isBuffet=false, isThreeQuarter=false){
+  // 3/4 inch uses extender formula
+  if(isThreeQuarter) return calcExtenderPrice(width, length);
+  const w=roundUp(width), l=roundUp(length);
+  let price=isBuffet ? 199 : 249;
+  if(w>48) price+=(w-48)*6;
+  if(l>72)  price+=(l-72)*6;
+  for(const [lw_raw,ll_raw] of leaves){
+    const lw=roundUp(lw_raw), ll=roundUp(ll_raw);
+    let leafPrice=75;
+    if(lw>48) leafPrice+=(lw-48)*6;
+    if(ll>24) leafPrice+=(ll-24)*6;
+    price+=leafPrice;
+  }
+  return price;
+}
+
+function calcExtenderPrice(width, length){
+  const w=roundUp(width), l=roundUp(length);
+  let price=399;
+  if(w>54) price+=(w-54)*6;
+  if(l>72)  price+=(l-72)*6;
+  return price;
+}
+
+// For round/hex/oct: single measurement (diameter or corner-to-corner)
+// width = length = that single measurement
+function calcRoundPrice(diameter){ return calcTablePadPrice(diameter, diameter); }
+
+/* ── DIMENSION EXTRACTOR ── */
+// Parses dimensions from natural language like:
+// "42x72", "42 by 72", "42 x 72 with 2 leaves of 18 inches"
+// "width 42 length 72", "54 wide 96 long"
+function extractDimensions(txt){
+  const t=txt.toLowerCase().replace(/["""'']/g,'').replace(/inches|inch|in\b|"/g,'').trim();
+
+  // Match patterns like 42x72, 42 x 72, 42by72, 42 by 72
+  const byMatch=t.match(/(\d+\.?\d*)\s*(?:x|by|×)\s*(\d+\.?\d*)/i);
+  if(byMatch) return{width:parseFloat(byMatch[1]),length:parseFloat(byMatch[2])};
+
+  // Match "width 42 length 72" or "42 wide 72 long"
+  const wlMatch=t.match(/(?:width|wide|w)\s*[:\s]?\s*(\d+\.?\d*)[\s,]+(?:length|long|l)\s*[:\s]?\s*(\d+\.?\d*)/i);
+  if(wlMatch) return{width:parseFloat(wlMatch[1]),length:parseFloat(wlMatch[2])};
+
+  // Match "42 and 72" or two consecutive numbers
+  const twoNums=t.match(/(\d+\.?\d*)\s+(?:and\s+)?(\d+\.?\d*)/);
+  if(twoNums) return{width:parseFloat(twoNums[1]),length:parseFloat(twoNums[2])};
+
+  return null;
+}
+
+// Extract leaf dimensions — leaf width always = table width, only need leaf length
+// Call as extractLeaves(txt, tableWidth)
+function extractLeaves(txt, tableWidth=48){
+  const t=txt.toLowerCase().replace(/inches|inch|in\b|"/g,'').trim();
+  const leaves=[];
+
+  // "2 leaves of 18" / "2 leaves 18" / "2 leaf 18"
+  const countAndSize=t.match(/(\d+)\s*lea(?:f|ves)\s+(?:of\s+)?(\d+\.?\d*)/i);
+  if(countAndSize){
+    const count=parseInt(countAndSize[1]);
+    const leafLength=parseFloat(countAndSize[2]);
+    for(let i=0;i<count;i++) leaves.push([tableWidth, leafLength]);
+    return leaves;
+  }
+
+  // "18 inch leaf" / "leaf of 18" / "each leaf 18"
+  const sizeFirst=t.match(/(?:leaf|leaves)\s+(?:of\s+|each\s+)?(\d+\.?\d*)/i);
+  if(sizeFirst){
+    leaves.push([tableWidth, parseFloat(sizeFirst[1])]);
+    return leaves;
+  }
+
+  const sizeBefore=t.match(/(\d+\.?\d*)\s*(?:inch\s+)?lea(?:f|ves)/i);
+  if(sizeBefore){
+    leaves.push([tableWidth, parseFloat(sizeBefore[1])]);
+    return leaves;
+  }
+
+  // "leaf x y" — take smaller as length, ignore the other (width = table width)
+  const leafDim=t.match(/lea(?:f|ves)\s+(\d+\.?\d*)\s*(?:x|by)\s*(\d+\.?\d*)/i);
+  if(leafDim){
+    const leafLength=Math.min(parseFloat(leafDim[1]),parseFloat(leafDim[2]));
+    leaves.push([tableWidth, leafLength]);
+    return leaves;
+  }
+
+  return leaves;
+}
+
+// Build a friendly price quote message
+// storedDims = {width, length} passed in when we already collected dims separately
+function buildPriceQuote(txt, type='pad', storedDims=null){
+  const dims=storedDims||extractDimensions(txt);
+  if(!dims) return null;
+
+  const {width,length}=dims;
+  // ALWAYS use table width for leaves — only leaf length needed from customer
+  const leaves=extractLeaves(txt, width);
+  const isExtender=type==='extender'||/extender/.test(txt.toLowerCase());
+
+  if(isExtender){
+    const price=calcExtenderPrice(width,length);
+    return`For a <strong>${width}" × ${length}"</strong> extender:\n\n💰 <strong>$${price} + $110 shipping</strong>\n✅ Magnetic connection, stores easily\n\n${lnk('https://tablepadspro.com/products/custom-table-pad-extender','Order Extender →')} or call ${ph('888-929-4940')}`;
+  }
+
+  const padPrice=calcTablePadPrice(width,length,leaves);
+  let reply=`For a <strong>${width}" × ${length}"</strong> table`;
+  if(leaves.length>0){
+    const leafLengths=[...new Set(leaves.map(([w,l])=>l+'"'))].join(', ');
+    reply+=` with <strong>${leaves.length} leaf/leaves (${leafLengths} each)</strong>`;
+  }
+  reply+=`:\n\n💰 <strong>$${padPrice} + $65 shipping</strong>\n`;
+  if(leaves.length>0){
+    const basePrice=calcTablePadPrice(width,length,[]);
+    reply+=`📋 Base pad $${basePrice} + leaves $${padPrice-basePrice}\n`;
+  }
+  reply+=`✅ Custom-made · 600°F heat resistant · 20–30 yr lifespan\n\n`;
+
+  const isOval=/oval|egg/.test(txt.toLowerCase());
+  const isRound=/round|circle/.test(txt.toLowerCase());
+  if(isOval){
+    reply+=`For your oval table I'll need a free tracing kit — could I get your <strong>mailing address</strong>? 📬`;
+  } else if(isRound){
+    reply+=`${lnk('https://tablepadspro.com/products/round-table-pad','Order Round Pad →')} or call ${ph('888-929-4940')}`;
+  } else {
+    reply+=`${lnk('https://tablepadspro.com/products/rectangular-table-pad-185','Order Now →')} or call ${ph('888-929-4940')}`;
+  }
+  return reply;
+}
+
+/* ── DIMENSION COLLECTION STATE ── */
+let awaitingDims=null;    // null | 'pad' | 'extender'
+let awaitingLeaves=null;  // null | {width, length} — dims stored while asking for leaf size
+let awaitingLeafCount=0;  // how many leaves customer said they have
+
+
+async function sendMsg(){
+  if(loading)return;
+  const ci=document.getElementById('ci');
+  const txt=ci.value.trim();
+  if(!txt&&!pendingImg)return;
+  ci.value='';ar(ci);
+  const imgToSend=pendingImg;clearImg();
+  addMsg('u',txt||'[Photo attached]',imgToSend?.dataUrl);
+  history.push({role:'user',content:txt||'[Image attached]'});
+  sessionStats.convos++;
+  if(txt) sessionStats.questions.push(txt);
+  updateStats();
+  // Check if customer is saying goodbye — skip AI, show farewell + rating
+  if(txt && goodbyeWords.test(txt) && history.filter(m=>m.role==='user').length >= 2){
+    checkConversationEnd(txt);
+    loading=false;document.getElementById('sbtn').disabled=false;
+    rmTyping();
+    return;
+  }
+  loading=true;document.getElementById('sbtn').disabled=true;
+  showTyping();
+  const isFirst=history.filter(m=>m.role==='user').length===1;
+
+  // ── PRICING FLOW ──
+  const hasDims=extractDimensions(txt)!==null;
+  const isPriceIntent=/price|cost|how much|quote|\$/.test(txt.toLowerCase());
+  const isExtenderMsg=/extender|extend/.test(txt.toLowerCase());
+  const hasLeafInfo=/lea(?:f|ves)/.test(txt.toLowerCase());
+  const hasNoLeaf=/no leaf|no leave|without leaf|don.t have leaf|0 leaf|none/.test(txt.toLowerCase());
+
+  // STEP 3: Customer gave leaf size — we have dims + count stored, now calculate
+  if(awaitingLeaves!==null && awaitingLeafCount>0){
+    // Parse the leaf LENGTH from their reply — just a number like "18"
+    const leafSizeMatch=txt.match(/(\d+\.?\d*)/);
+    if(leafSizeMatch){
+      const leafLength=parseFloat(leafSizeMatch[1]);
+      const {width,length}=awaitingLeaves;
+      // Leaf width = table width (always), leaf length = what customer gave
+      const leaves=[];
+      for(let i=0;i<awaitingLeafCount;i++) leaves.push([width, leafLength]);
+      const padPrice=calcTablePadPrice(width,length,leaves);
+      const basePrice=calcTablePadPrice(width,length,[]);
+      const prevMsgs=history.map(m=>typeof m.content==='string'?m.content:'').join(' ').toLowerCase();
+      const isOval=/oval|egg/.test(prevMsgs);
+      const isRound=/round|circle/.test(prevMsgs);
+
+      let reply=`For a <strong>${width}" × ${length}"</strong> table with <strong>${awaitingLeafCount} leaf/leaves (${width}" × ${leafLength}" each)</strong>:\n\n`;
+      reply+=`💰 <strong>$${padPrice} + $65 shipping</strong>\n`;
+      reply+=`📋 Base pad $${basePrice} + leaves $${padPrice-basePrice}\n`;
+      reply+=`✅ Custom-made · 600°F heat resistant · 20–30 yr lifespan\n\n`;
+      if(isOval){ reply+=`I'll send a free tracing kit — could I get your <strong>mailing address</strong>? 📬`; flow='kit_address'; }
+      else if(isRound) reply+=`${lnk('https://tablepadspro.com/products/round-table-pad','Order Round Pad →')} or call ${ph('888-929-4940')}`;
+      else reply+=`${lnk('https://tablepadspro.com/products/rectangular-table-pad-185','Order Now →')} or call ${ph('888-929-4940')}`;
+
+      awaitingLeaves=null; awaitingLeafCount=0;
+      await new Promise(r=>setTimeout(r,600)); rmTyping();
+      history.push({role:'assistant',content:reply});
+      const prod=isRound?PRODUCTS.find(p=>p.keys.includes('round')):isOval?PRODUCTS.find(p=>p.keys.includes('oval')):PRODUCTS.find(p=>p.keys.includes('rectangular'));
+      addMsg('b',reply,null,prod);
+      if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+      showToast('✉️','Price quote logged → tablepadspro@gmail.com');
+      sessionStats.emails++;updateStats();
+      loading=false; document.getElementById('sbtn').disabled=false;
+      return;
+    }
+    // Could not parse — ask again clearly
+    await new Promise(r=>setTimeout(r,500)); rmTyping();
+    addMsg('b',`Just the leaf length in inches please — for example, type <strong>18</strong> or <strong>24</strong>.`);
+    loading=false; document.getElementById('sbtn').disabled=false;
+    return;
+  }
+
+  // STEP 3b: We have dims stored but awaitingLeafCount=0 — customer just answered leaf COUNT
+  if(awaitingLeaves!==null && awaitingLeafCount===0){
+    const lower=txt.toLowerCase().trim();
+    const {width,length}=awaitingLeaves;
+
+    // No leaves
+    if(/no|none|zero|0|don.t|without|just the table/i.test(lower)&&!/\d+\s*lea/i.test(lower)){
+      awaitingLeaves=null;awaitingLeafCount=0;awaitingDims=null;
+      const padPrice=calcTablePadPrice(width,length,[]);
+      const prevMsgs=history.map(m=>typeof m.content==='string'?m.content:'').join(' ').toLowerCase();
+      const isOval=/oval|egg/.test(prevMsgs);
+      const isRound=/round|circle/.test(prevMsgs);
+      let reply=`For a <strong>${width}" × ${length}"</strong> table (no leaves):\n\n💰 <strong>$${padPrice} + $65 shipping</strong>\n✅ Custom-made · 600°F · 20–30 yr lifespan\n\n`;
+      if(isOval){ reply+=`I'll need a tracing — could I get your <strong>mailing address</strong>? 📬`; flow='kit_address'; }
+      else if(isRound) reply+=`${lnk('https://tablepadspro.com/products/round-table-pad','Order Round Pad →')} or call ${ph('888-929-4940')}`;
+      else reply+=`${lnk('https://tablepadspro.com/products/rectangular-table-pad-185','Order Now →')} or call ${ph('888-929-4940')}`;
+      await new Promise(r=>setTimeout(r,600)); rmTyping();
+      history.push({role:'assistant',content:reply});
+      addMsg('b',reply);
+      if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+      showToast('✉️','Price quote logged → tablepadspro@gmail.com');
+      sessionStats.emails++;updateStats();
+      loading=false; document.getElementById('sbtn').disabled=false;
+      return;
+    }
+
+    // Extract leaf count
+    const numMatch=txt.match(/(\d+)/);
+    if(numMatch){
+      const count=parseInt(numMatch[1]);
+      awaitingLeafCount=count;
+      // Now ask for leaf LENGTH only — width is always table width
+      const ask=`Got it — <strong>${count} leaf/leaves</strong>!\n\nWhat is the <strong>length</strong> of each leaf in inches?\n(I'll use your table width of <strong>${width}"</strong> as the leaf width automatically — just give me the shorter measurement.)`;
+      await new Promise(r=>setTimeout(r,600)); rmTyping();
+      history.push({role:'assistant',content:ask});
+      addMsg('b',ask);
+      if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+      loading=false; document.getElementById('sbtn').disabled=false;
+      return;
+    }
+
+    // Couldn't understand — ask again
+    await new Promise(r=>setTimeout(r,500)); rmTyping();
+    addMsg('b',`How many leaves does your table have? Just type a number, or "none" if no leaves.`);
+    loading=false; document.getElementById('sbtn').disabled=false;
+    return;
+  }
+
+  // STEP 2: Customer gave dimensions — now ask about leaves (for pads only)
+  if(hasDims && (awaitingDims==='pad' || isPriceIntent || /table|pad/.test(txt.toLowerCase())) && !isExtenderMsg){
+    const dims=extractDimensions(txt);
+    if(dims){
+      const {width,length}=dims;
+
+      // If they already mentioned leaves in same message
+      if(hasLeafInfo){
+        const leaves=extractLeaves(txt,width);
+        if(leaves.length>0){
+          // We have everything — calculate now
+          awaitingDims=null;
+          const quote=buildPriceQuote(txt,'pad',dims);
+          await new Promise(r=>setTimeout(r,700)); rmTyping();
+          history.push({role:'assistant',content:quote});
+          const prod=PRODUCTS.find(p=>p.keys.includes('rectangular'));
+          addMsg('b',quote,null,prod);
+          if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+          showToast('✉️','Price quote logged → tablepadspro@gmail.com');
+          sessionStats.emails++;updateStats();
+          loading=false; document.getElementById('sbtn').disabled=false;
+          return;
+        }
+      }
+
+      // If they said no leaves — quote immediately
+      if(hasNoLeaf){
+        awaitingDims=null;
+        const padPrice=calcTablePadPrice(width,length,[]);
+        const isOval=/oval|egg/.test(txt.toLowerCase());
+        const isRound=/round|circle/.test(txt.toLowerCase());
+        let reply=`For a <strong>${width}" × ${length}"</strong> table (no leaves):\n\n💰 <strong>$${padPrice} + $65 shipping</strong>\n✅ Custom-made · 600°F heat resistant · 20–30 yr lifespan\n\n`;
+        if(isOval) reply+=`I'll need a free tracing kit — could I get your <strong>mailing address</strong>? 📬`;
+        else if(isRound) reply+=`${lnk('https://tablepadspro.com/products/round-table-pad','Order Round Pad →')} or call ${ph('888-929-4940')}`;
+        else reply+=`${lnk('https://tablepadspro.com/products/rectangular-table-pad-185','Order Now →')} or call ${ph('888-929-4940')}`;
+        if(isOval) flow='kit_address';
+        await new Promise(r=>setTimeout(r,700)); rmTyping();
+        history.push({role:'assistant',content:reply});
+        addMsg('b',reply);
+        if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+        showToast('✉️','Price quote logged → tablepadspro@gmail.com');
+        sessionStats.emails++;updateStats();
+        loading=false; document.getElementById('sbtn').disabled=false;
+        return;
+      }
+
+      // Otherwise — store dims and ask about leaves (count only, not size yet)
+      awaitingDims=null;
+      awaitingLeaves={width,length};
+      awaitingLeafCount=0;
+      const leafCountMatch=txt.match(/(\d+)\s*lea(?:f|ves)/i);
+      if(leafCountMatch){
+        // They said how many leaves — now just ask for the LENGTH (width = table width)
+        awaitingLeafCount=parseInt(leafCountMatch[1]);
+        const askLeafSize=`Got it — <strong>${width}" × ${length}"</strong> with ${awaitingLeafCount} leaf/leaves.\n\nWhat is the <strong>length</strong> of each leaf in inches?\n(I'll use your table width of <strong>${width}"</strong> as the leaf width automatically.)`;
+        await new Promise(r=>setTimeout(r,700)); rmTyping();
+        history.push({role:'assistant',content:askLeafSize});
+        addMsg('b',askLeafSize);
+        if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+        loading=false; document.getElementById('sbtn').disabled=false;
+        return;
+      } else {
+        // Ask how many leaves they have (just the count — we'll ask size next)
+        const askLeaves=`Got it — <strong>${width}" × ${length}"</strong>!\n\nDoes your table have any leaves? If yes, how many?`;
+        await new Promise(r=>setTimeout(r,700)); rmTyping();
+        history.push({role:'assistant',content:askLeaves});
+        addMsg('b',askLeaves);
+        if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+        loading=false; document.getElementById('sbtn').disabled=false;
+        return;
+      }
+    }
+  }
+
+  // STEP 1b: Extender with dims — quote immediately
+  if(hasDims && isExtenderMsg){
+    const dims=extractDimensions(txt);
+    if(dims){
+      awaitingDims=null;
+      const quote=buildPriceQuote(txt,'extender',dims);
+      await new Promise(r=>setTimeout(r,700)); rmTyping();
+      history.push({role:'assistant',content:quote});
+      addMsg('b',quote,null,PRODUCTS.find(p=>p.keys.includes('extender')));
+      if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+      showToast('✉️','Price quote logged → tablepadspro@gmail.com');
+      sessionStats.emails++;updateStats();
+      loading=false; document.getElementById('sbtn').disabled=false;
+      return;
+    }
+  }
+
+  // STEP 1a: Price intent but no dims — ask for them
+  if(isPriceIntent&&!hasDims&&!awaitingDims&&awaitingLeaves===null){
+    awaitingDims=isExtenderMsg?'extender':'pad';
+    const ask=isExtenderMsg
+      ?`Happy to quote your extender! What is the <strong>width × length</strong> in inches? (e.g. "54 × 72")`
+      :`Happy to give you an exact price!\n\nWhat is your table's <strong>width × length</strong> in inches? (e.g. "42 × 72")`;
+    await new Promise(r=>setTimeout(r,700)); rmTyping();
+    history.push({role:'assistant',content:ask});
+    addMsg('b',ask);
+    if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+    loading=false; document.getElementById('sbtn').disabled=false;
+    return;
+  }
+
+
+  if(flow!==null){
+    await new Promise(r=>setTimeout(r,600));
+    rmTyping();
+    const fr=handleFlow(txt);
+    history.push({role:'assistant',content:fr});
+    addMsg('b',fr);
+    if(isFirst&&!leadCaptured)setTimeout(showLeadForm,700);
+    showToast('✉️','Logged → tablepadspro@gmail.com');
+    sessionStats.emails++;updateStats();
+    loading=false;document.getElementById('sbtn').disabled=false;
+    return;
+  }
+
+  // Order status check
+  const orderCheck=lookupOrder(txt);
+  if(orderCheck&&txt.toLowerCase().includes('order')||txt.toLowerCase().includes('status')||txt.toLowerCase().includes('tracking')){
+    if(orderCheck){
+      await new Promise(r=>setTimeout(r,700));
+      rmTyping();
+      let orderReply=`Here's the status for order <strong>${orderCheck.id}</strong> (${orderCheck.item}):\n\n`;
+      orderReply+=`📦 <strong>Status:</strong> ${orderCheck.status}\n`;
+      orderReply+=`📅 <strong>Estimated delivery:</strong> ${orderCheck.eta}\n`;
+      orderReply+=`💰 <strong>Total:</strong> ${orderCheck.total}`;
+      if(orderCheck.shipped&&orderCheck.tracking){
+        orderReply+=`\n🚚 <strong>Tracking (${orderCheck.carrier}):</strong> ${orderCheck.tracking}`;
+      }
+      orderReply+=`\n\nQuestions? Call ${ph('888-929-4940')} anytime!`;
+      history.push({role:'assistant',content:orderReply});
+      addMsg('b',orderReply);
+      if(isFirst&&!leadCaptured)setTimeout(showLeadForm,700);
+      showToast('✉️','Logged → tablepadspro@gmail.com');
+      loading=false;document.getElementById('sbtn').disabled=false;
+      return;
+    }
+  }
+
+  // Call live AI server
+  try{
+    const apiMessages=history.map(m=>({
+      role:m.role==='assistant'?'assistant':'user',
+      content:typeof m.content==='string'?m.content:'[Image sent by customer]'
+    }));
+    // Detect language from first user message
+    if(history.filter(m=>m.role==='user').length===1){
+      detectedLang=detectLanguage(txt);
+    }
+    const serverURL=document.getElementById('server-url')?.value||SERVER;
+    const res=await fetch(`${serverURL}/chat`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:apiMessages})
+    });
+    const data=await res.json();
+    rmTyping();
+    // Strip asterisks — unprofessional in chat
+    let reply=(data.reply||getLocalReply(txt)).replace(/\*\*/g,'').replace(/\*/g,'');
+    history.push({role:'assistant',content:reply});
+
+    // Check if AI response triggers a collection flow
+    if(/name.*phone.*address|mailing address|phone number.*address/i.test(reply)){
+      if(/oval|egg|pattern kit|tracing/i.test(txt+reply)) flow='kit_name';
+      else if(/swatch|color sample|colour sample/i.test(txt+reply)) flow='swatch_name';
+      else if(/in.home|home visit|rep.*visit/i.test(txt+reply)) flow='inhome_name';
+    }
+
+    const prod=findProduct(txt);
+    addMsg('b',reply,null,prod);
+
+  }catch(e){
+    rmTyping();
+    let reply=getLocalReply(txt).replace(/\*\*/g,'').replace(/\*/g,'');
+    history.push({role:'assistant',content:reply});
+    const prod=findProduct(txt);
+    addMsg('b',reply,null,prod);
+  }
+
+  if(isFirst&&!leadCaptured)setTimeout(showLeadForm,700);
+  showToast('✉️','Conversation logged → tablepadspro@gmail.com');
+  sessionStats.emails++;updateStats();
+  loading=false;document.getElementById('sbtn').disabled=false;
+}
+
+/* ── LOCAL FALLBACK KB ── */
+function getLocalReply(txt){
+  if(flow!==null) return handleFlow(txt);
+  const lower=txt.toLowerCase();
+
+  // Shape-specific measurement guidance
+  if(/hexagon|hex table/.test(lower)) return`Great news — no tracing needed for hexagon tables! 🎉\n\nI just need two quick measurements:\n📐 Corner to opposite corner (widest point)\n📐 Length of one side\n\nWhat are those two measurements?`;
+  if(/octagon|oct table/.test(lower)) return`Great news — no tracing needed for octagon tables! 🎉\n\nI just need two quick measurements:\n📐 Corner to opposite corner (widest point)\n📐 Length of one side\n\nWhat are those two measurements?`;
+  if(/rounded corner|round corner/.test(lower)) return`For rounded corners, the easiest method is a <strong>photo of the corner with a ruler along the straight edge</strong>. You can also mail a tracing or give us the exact radius. 📐`;
+  if(/clipped corner|clip corner/.test(lower)) return`For clipped corners, I need the <strong>width, length, and size of the clip</strong>. You can also mail a tracing — or we'll email you a diagram to fill in. Easy!`;
+  if(/live edge|irregular|unique/.test(lower)) return`For live edge or irregular tables, we need a <strong>full tracing</strong> of the entire table. We can mail you a DIY kit, or send a rep to your home. Which do you prefer?`;
+  if(/oval|egg|designed end/.test(lower)){
+    flow='kit_name';
+    return`For oval tables, we need a tracing for a perfect fit — and our free pattern kit makes it easy! 📬\n\nMay I start with your <strong>full name</strong>?`;
+  }
+
+  // Contact collection triggers — set flow AND return message
+  if(/pattern kit|free kit|tracing kit/.test(lower)){
+    flow='kit_name';
+    return`Our free pattern kit is the most accurate method! 📬\n\nMay I start with your <strong>full name</strong>?`;
+  }
+  if(/swatch|color sample|colour sample|free sample/.test(lower)){
+    flow='swatch_name';
+    return`Happy to send free color swatches! 🎨\n\nMay I start with your <strong>full name</strong>?`;
+  }
+  if(/in.home|home visit|send someone|rep visit|in home/.test(lower)){
+    flow='inhome_name';
+    return`We'd love to send a rep to your home! 🏠\n\nMay I start with your <strong>full name</strong>?`;
+  }
+
+  // Products
+  if(/desk|office desk/.test(lower)) return`Our desk pads are very popular — available in <strong>1/4" thickness</strong> with optional <strong>tech cut-outs</strong> for monitors, cables, etc. What are your desk dimensions?`;
+  if(/conference|boardroom|tech cut/.test(lower)) return`Conference table pads are in high demand! We offer <strong>tech cut-outs</strong> for cables and equipment. Available in multiple thicknesses.\n\nWhat are your conference table dimensions?`;
+  if(/museum|gallery|piano|island|window sill/.test(lower)) return`We protect all kinds of surfaces — museums, pianos, kitchen islands, window sills, and more. Custom-made to any shape. What surface do you need protected?`;
+  if(/golf|event room|bar |restaurant|hospitality/.test(lower)) return`Table extenders are perfect for ${lower.includes('golf')?'golf clubs':lower.includes('bar')?'bars':lower.includes('restaurant')?'restaurants':'event spaces'}! They provide a 6–7" overhang and are built for commercial use.\n\nCall ${ph('888-929-4940')} for a commercial quote or tell me the table dimensions!`;
+  if(/pool|billiard|game table|shuffleboard|ping.?pong/.test(lower)) return`Yes, we protect ${lower.includes('pool')||lower.includes('billiard')?'pool/billiard tables':lower.includes('shuffleboard')?'shuffleboards':'game tables'} too! Custom-made, perfect fit.\n\nCall ${ph('888-929-4940')} or share the table dimensions for a quote.`;
+
+  // Thickness
+  if(/thick|thickness/.test(lower)) return`We offer 4 thicknesses:\n• <strong>1/4"</strong> — Desks\n• <strong>3/8"</strong> — Buffets, sideboards, coffee tables\n• <strong>1/2"</strong> — Standard dining (most common)\n• <strong>3/4"</strong> — Elite/premium tables and extenders`;
+
+  // Additional products
+  if(/leaf pad|leaf protection/.test(lower)) return`Individual leaf pads are <strong>$155 each</strong> — perfect for protecting your table's extension leaves when not in use.`;
+  if(/storage bag|pad bag/.test(lower)) return`Pad storage bags are <strong>$45 each</strong>. One bag fits most tables up to 48" × 80". Larger tables or multiple leaves may need an extra bag.`;
+  if(/wood leaf bag|leaf bag|leaf storage/.test(lower)) return`We carry <strong>wood leaf storage bags</strong> to protect your table leaves when they're not in use — a great add-on to any order!`;
+  if(/tablecloth|table cloth/.test(lower)) return`We offer custom tablecloths too! 🎨 What colors are you interested in? I can arrange to send you samples.`;
+  if(/gift card|gift/.test(lower)) return`Gift cards make a wonderful gift — especially for someone moving into a new home or buying a new table! Would you like to get one?`;
+
+  // Extender info
+  if(/extender|extend/.test(lower)) return`Our table extenders provide a <strong>6–7" overhang</strong> and are great for golf clubs, restaurants, event rooms, and home use. Shipping is $110/box.\n\nShare your dimensions for an exact quote!`;
+
+  // Standard info
+  if(/cost|price|how much|\$/.test(lower)) return`I can give you an exact price! Share your table's width × length in inches — or just the diameter if it's round. Do you have any leaves?`;
+  if(/round|circle/.test(lower)) return`For round tables I just need the diameter — no tracing needed! 🎉 Do you have any leaves?`;
+  if(/leaf pad|just.*leaf|leaf.*only|standalone.*leaf/.test(lower)) return`Leaf pads are 💰 $75 each when ordered with a table pad, or $155 each as a standalone order. How many leaves do you have?`;
+  if(/buffet|sideboard|coffee table|desk pad/.test(lower)) return`Our buffet, coffee table, and desk pads start at $199 base — same formula applies for larger sizes. What are the dimensions?`;
+  if(/return|refund|policy/.test(lower)) return`All orders are custom-made so we don't accept returns or offer refunds. That said, we stand fully behind our craftsmanship — if anything arrives damaged, we'll replace it free. 📦 Just report within 48 hours with photos.`;
+  if(/damage|defect|broken|wrong size|doesn.t fit/.test(lower)) return`If the pad arrived damaged or there's a craftsmanship issue — we replace it free! 📧 Email us at ${ml('Hello@TablePadsPro.com')} within 48 hours with photos of the damage and the box from all sides.`;
+  if(/hours|open|when|schedule|available/.test(lower)) return`🕐 We're open Sun–Thu 9am–7pm ET, Fri 9am–5pm ET. Closed Saturday. Call ${ph('888-929-4940')} or email anytime!`;
+  if(/discount|promo|coupon|code|sale|special/.test(lower)) return`We run specials from time to time — keep an eye on our website or ask if there's a current promotion. You'll need a promo code to redeem any discount. 🎉`;
+  if(/ship|canada|israel|international/.test(lower)) return`US & Canada: 📦 $65 flat rate (pads) or $110 (extenders/pool). International: call ${ph('888-929-4940')} for a quote. Delivery 4–6 weeks.`;
+  if(/rush|fast|urgent|quick/.test(lower)) return`Yes! Expedited production is available for an extra fee. ⚡ Call ${ph('888-929-4940')} and we'll do our best to meet your deadline.`;
+  if(/heat|hot|degrees/.test(lower)) return`Our pads are heat resistant up to 600°F. 🔥 Hot dishes are no problem — for pots directly off the stove, use a trivet.`;
+  if(/antique|heirloom|old table/.test(lower)) return`Completely safe for antiques — soft velvet backing, no adhesives, fully breathable. Trusted by collectors for decades. ✅`;
+  if(/clean|care|wash|maintain/.test(lower)) return`Easy care: wipe with a damp cloth and mild soap. No bleach. Store flat. With proper care, pads last 20–30+ years. 🧹`;
+  if(/color|colour|opal/.test(lower)) return`We offer 25+ colors — solids, wood grains, and patina leather. 🎨 Note: Opal is currently back-ordered; we'll suggest a beautiful alternative!\n\nWant free swatches mailed to you?`;
+  if(/hi|hello|hey|good morning|good afternoon/.test(lower)) return`Hello! 👋 I'm Elliot from Table Pads Pro. How can I help you today?`;
+  if(/how long|years|last|durable/.test(lower)) return`Our pads last 20–30+ years with proper care — preventing $1,000+ in refinishing costs. Many customers pass them down to their children! 🏆`;
+  if(/about|who are|history|since/.test(lower)) return`Table Pads Pro has been family-owned since 1980 — over 45 years protecting tables. Premium US materials, assembled in Canada. 🇺🇸`;
+  if(/contact|phone|call|email|address/.test(lower)) return`📞 ${ph('888-929-4940')} or ${ph('516-882-5154')}\n📧 ${ml('Hello@TablePadsPro.com')}\n📍 999 Central Ave STE 303, Woodmere NY 11598`;
+  return`Great question! For the fastest answer:\n📞 ${ph('888-929-4940')}\n📧 ${ml('Hello@TablePadsPro.com')}`;
+}
+
+/* ── FLOW HANDLER ── */
+// Extended flows now collect: name → phone → address (for kit/swatches/in-home)
+// Then for swatches: also ask colors
+let contactName='', contactPhone='', contactAddress='';
+
+function handleFlow(txt){
+
+  // ── PATTERN KIT FLOW ──
+  if(flow==='kit_name'){ contactName=txt; flow='kit_phone';
+    return`Thanks, <strong>${txt}</strong>! What's the best <strong>phone number</strong> to reach you?`; }
+  if(flow==='kit_phone'){ contactPhone=txt; flow='kit_address';
+    return`Got it! And your <strong>mailing address</strong>? (street, city, state, zip)`; }
+  if(flow==='kit_address'){
+    contactAddress=txt; flow=null;
+    const preview=`Pattern kit → ${contactName} | ${contactPhone} | ${contactAddress}`;
+    logs.unshift({name:contactName||visitorName||currentVis.nm,email:'',time:'Just now',preview,tags:['lead','resolved'],ord:'',convo:[...history.map(m=>({role:m.role==='assistant'?'b':'u',text:typeof m.content==='string'?m.content:'[image]'}))]});
+    sessionStats.leads++;updateStats();
+    showToast('✉️','Pattern kit request → tablepadspro@gmail.com');
+    sendEmailNotification('kit', {name:contactName, phone:contactPhone, address:txt});
+    const n=contactName;contactName='';contactPhone='';contactAddress='';
+    return`Perfect, ${n}! 🎉 Your free pattern kit is on its way to <strong>${txt}</strong>.\n\nYou'll receive it in a few business days. Trace your table, mail it back, and we'll create your perfect pad!\n\nQuestions? Call ${ph('888-929-4940')} anytime.`;
+  }
+
+  // ── SWATCH FLOW ──
+  if(flow==='swatch_name'){ contactName=txt; flow='swatch_phone';
+    return`Thanks, <strong>${txt}</strong>! What's the best <strong>phone number</strong> to reach you?`; }
+  if(flow==='swatch_phone'){ contactPhone=txt; flow='swatch_address';
+    return`Got it! And your <strong>mailing address</strong>? (street, city, state, zip)`; }
+  if(flow==='swatch_address'){ swatchAddress=txt; flow='swatch_colors';
+    return`Almost there! 📍 <strong>${txt}</strong>\n\nWhich <strong>colors</strong> interest you? (e.g. dark walnut, ivory, mahogany) — or say <em>"send a variety"</em> and we'll pick a beautiful selection! 🎨`; }
+  if(flow==='swatch_colors'){
+    const c=txt; flow=null;
+    const preview=`Swatches → ${contactName} | ${contactPhone} | ${swatchAddress} | Colors: ${c}`;
+    logs.unshift({name:contactName||visitorName||currentVis.nm,email:'',time:'Just now',preview,tags:['lead','resolved'],ord:'',convo:[...history.map(m=>({role:m.role==='assistant'?'b':'u',text:typeof m.content==='string'?m.content:'[image]'}))]});
+    sessionStats.leads++;updateStats();
+    showToast('✉️','Swatch request → tablepadspro@gmail.com');
+    sendEmailNotification('swatches', {name:contactName, phone:contactPhone, address:swatchAddress, colors:c});
+    const n=contactName;contactName='';contactPhone='';contactAddress='';swatchAddress='';
+    return`Wonderful, ${n}! Sending your swatches (<strong>${c}</strong>) right away. 📬\n\nExpect them in a few business days. Call ${ph('888-929-4940')} when they arrive and we'll help you choose the perfect color!`;
+  }
+
+  // ── IN-HOME SERVICE FLOW ──
+  if(flow==='inhome_name'){ contactName=txt; flow='inhome_phone';
+    return`Thanks, <strong>${txt}</strong>! What's the best <strong>phone number</strong> to reach you?`; }
+  if(flow==='inhome_phone'){ contactPhone=txt; flow='inhome_address';
+    return`Got it! And your <strong>home address</strong>? (street, city, state, zip)`; }
+  if(flow==='inhome_address'){
+    contactAddress=txt; flow=null;
+    const preview=`In-home visit → ${contactName} | ${contactPhone} | ${contactAddress}`;
+    logs.unshift({name:contactName||visitorName||currentVis.nm,email:'',time:'Just now',preview,tags:['lead','resolved'],ord:'',convo:[...history.map(m=>({role:m.role==='assistant'?'b':'u',text:typeof m.content==='string'?m.content:'[image]'}))]});
+    sessionStats.leads++;updateStats();
+    showToast('✉️','In-home request → tablepadspro@gmail.com');
+    sendEmailNotification('inhome', {name:contactName, phone:contactPhone, address:txt});
+    const n=contactName;contactName='';contactPhone='';contactAddress='';
+    return`Perfect, ${n}! 🏠 We'll have a representative reach out to schedule your in-home visit at <strong>${txt}</strong>.\n\nExpect a call to <strong>${contactPhone||'your number'}</strong> within 1–2 business days!\n\nQuestions? Call ${ph('888-929-4940')} anytime.`;
+  }
+
+  return null;
+}
+
+/* ── ADD MESSAGE ── */
+function addMsg(role,text,img,product){
+  const msgs=document.getElementById('msgs');
+  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const d=document.createElement('div');
+  const isAdmin=role==='admin-reply';
+  d.className=`msg ${role}`;
+  let avi;
+  if(role==='b') avi=elliotSVG(26);
+  else if(isAdmin) avi=`<span style="font-size:9px;font-weight:700;">YOU</span>`;
+  else avi=currentVis.ini;
+  let inner=`<div class="m-avi">${avi}</div><div>`;
+  inner+=`<div class="bub">${text.replace(/\n/g,'<br>')}`;
+  if(img) inner+=`<img src="${img}" class="chat-img" alt="Table photo"/>`;
+  inner+=`</div>`;
+  if(product&&role==='b') inner+=productCardHTML(product);
+  inner+=`<div class="m-time">${now}</div></div>`;
+  d.innerHTML=inner;
+  msgs.appendChild(d);msgs.scrollTop=99999;
+}
+function elliotMini(){return elliotSVG(26);}
+function showTyping(){
+  const msgs=document.getElementById('msgs');
+  const d=document.createElement('div');d.className='msg b';d.id='typ';
+  d.innerHTML=`<div class="m-avi">${elliotSVG(26)}</div><div><div class="bub"><div style="display:flex;gap:4px;align-items:center;padding:3px 1px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  msgs.appendChild(d);msgs.scrollTop=99999;
+}
+function rmTyping(){const t=document.getElementById('typ');if(t)t.remove();}
+
+/* ── LIVE MODE ── */
+function toggleLiveMode(){
+  liveMode=!liveMode;
+  const btn=document.getElementById('live-mode-btn');
+  const badge=document.getElementById('live-badge');
+  const liveArea=document.getElementById('live-reply-area');
+  btn.classList.toggle('active',liveMode);
+  btn.textContent=liveMode?'🎙 Exit Live':'🎙 Go Live';
+  badge.classList.toggle('show',liveMode);
+  liveArea.classList.toggle('show',liveMode);
+  showToast(liveMode?'🔴':'✅',liveMode?'Live mode ON — your replies go to the customer':'Live mode OFF — AI is responding');
+}
+function sendLiveReply(){
+  const inp=document.getElementById('live-reply-input');
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';
+  addMsg('admin-reply',txt);
+  history.push({role:'assistant',content:txt});
+  showToast('✅','Reply sent to customer!');
+}
+
+/* ── LEAD FORM ── */
+function showLeadForm(){
+  const slot=document.getElementById('lead-slot');
+  if(slot.innerHTML!=='')return;
+  slot.innerHTML=`<div class="lead-form"><div class="lf-title">👋 May I get your name and email to assist you better?</div><input class="lf-input" id="lf-nm" placeholder="Your name"/><input class="lf-input" id="lf-em" placeholder="Your email" type="email"/><button class="lf-btn" onclick="submitLead()">Continue chatting ›</button></div>`;
+}
+function submitLead(){
+  const nm=(document.getElementById('lf-nm')||{}).value?.trim()||'';
+  const em=(document.getElementById('lf-em')||{}).value?.trim()||'';
+  visitorName=nm||'there';leadCaptured=true;
+  document.getElementById('lead-slot').innerHTML='';
+  const t=nm?`Thanks, ${nm}! Let me help you find the perfect pad.`:`Thanks! Happy to help.`;
+  addMsg('b',t);history.push({role:'assistant',content:t});
+  if(em){
+    logs.unshift({name:nm||'Visitor',email:em,time:'Just now',preview:'Lead captured.',tags:['lead'],ord:currentVis.ord!=='null'?currentVis.ord:'',convo:[...history.map(m=>({role:m.role==='assistant'?'b':'u',text:typeof m.content==='string'?m.content:'[image]'}))]});
+    sessionStats.leads++;updateStats();
+    showToast('✉️',`New lead: ${nm||'visitor'} → tablepadspro@gmail.com`);
+    sendEmailNotification('lead', {name:nm, email:em, phone:'', page:currentVis.pg, message: history.filter(m=>m.role==='user').map(m=>m.content).slice(0,2).join(' | ')});
+  }
+}
+
+function handleImg(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{pendingImg={dataUrl:e.target.result,name:file.name};
+    document.getElementById('img-thumb').src=e.target.result;
+    document.getElementById('img-name').textContent=file.name;
+    document.getElementById('img-preview-bar').classList.add('show');};
+  r.readAsDataURL(file);input.value='';
+}
+function clearImg(){pendingImg=null;document.getElementById('img-preview-bar').classList.remove('show');document.getElementById('img-thumb').src='';}
+
+function selVis(el,nm,ini,pg,ord){
+  document.querySelectorAll('.vis').forEach(v=>v.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('c-avi').textContent=ini;
+  document.getElementById('c-nm').textContent=nm;
+  document.getElementById('c-pg').textContent=pg;
+  const pill=document.getElementById('ord-pill');
+  if(ord==='null'){pill.style.display='none';}else{pill.style.display='';pill.textContent='Order '+ord;}
+  currentVis={nm,ini,pg,ord};
+  flow=null;swatchAddress='';leadCaptured=false;visitorName='';history=[];pendingImg=null;orderShown=false;
+  awaitingDims=null;awaitingLeaves=null;awaitingLeafCount=0;
+  contactName='';contactPhone='';contactAddress='';awaitingLeaves=null;awaitingLeafCount=0;
+  ratingShown=false;detectedLang='en';
+  clearImg();
+  document.getElementById('msgs').innerHTML='';
+  document.getElementById('lead-slot').innerHTML='';
+  const g=getPageGreeting(pg);
+  addMsg('b',g);history.push({role:'assistant',content:g});
+}
+function showOrder(){
+  if(orderShown)return;orderShown=true;
+  const ord=ORDERS.find(o=>o.id===currentVis.ord.replace('Order ',''));
+  if(!ord)return;
+  const d=document.createElement('div');d.className='info-card';
+  d.innerHTML=`<div class="ic-lbl">Order ${ord.id}</div><div class="ic-row"><span>${ord.item}</span></div><div class="ic-row"><span>Status</span><span style="font-weight:600">${ord.status}</span></div><div class="ic-row"><span>ETA</span><span>${ord.eta}</span></div><div class="ic-row"><span>Total</span><span>${ord.total}</span></div>${ord.tracking?`<div class="ic-row"><span>Tracking</span><span style="font-size:10.5px">${ord.tracking}</span></div>`:''}`;
+  document.getElementById('msgs').appendChild(d);
+  document.getElementById('msgs').scrollTop=99999;
+}
+
+function sq(t){document.getElementById('ci').value=t;sendMsg();}
+
+// Direct flow trigger — bypasses AI, starts collection immediately
+function triggerFlow(type){
+  if(loading) return;
+  const messages = {
+    kit:    {user:'I would like a free pattern kit', reply:`Our free pattern kit is the most accurate way to get a perfect fit! 📬\n\nMay I start with your <strong>full name</strong>?`, flow:'kit_name'},
+    swatch: {user:'I would like free color swatches', reply:`Happy to send free color swatches — you can see all 25+ colors in person! 🎨\n\nMay I start with your <strong>full name</strong>?`, flow:'swatch_name'},
+    inhome: {user:'I would like an in-home visit', reply:`We would love to send a representative to your home — nationwide service! 🏠\n\nMay I start with your <strong>full name</strong>?`, flow:'inhome_name'},
+  };
+  const m = messages[type];
+  if(!m) return;
+  // Show customer message
+  addMsg('u', m.user);
+  history.push({role:'user', content:m.user});
+  sessionStats.convos++;sessionStats.questions.push(m.user);updateStats();
+  // Show Elliot reply and set flow
+  setTimeout(()=>{
+    flow = m.flow;
+    addMsg('b', m.reply);
+    history.push({role:'assistant', content:m.reply});
+    const isFirst = history.filter(h=>h.role==='user').length===1;
+    if(isFirst&&!leadCaptured) setTimeout(showLeadForm,700);
+  }, 600);
+}
+function hk(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function ar(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
+
+/* ── TABS ── */
+function sw(tab){
+  const tabs=['chat','training','logs','analytics','settings'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='logs')renderLogs('all');
+  if(tab==='analytics')buildBars();
+  if(tab==='training'){renderQA();renderProducts();}
+}
+function swT(el,s){
+  document.querySelectorAll('.tnav').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.ts').forEach(x=>x.classList.remove('active'));
+  document.getElementById('t-'+s).classList.add('active');
+  if(s==='qa')renderQA();
+  if(s==='products')renderProducts();
+}
+function swS(el,s){
+  document.querySelectorAll('.snav').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.ss').forEach(x=>x.classList.remove('active'));
+  document.getElementById('s-'+s).classList.add('active');
+}
+
+/* ── TRAINING ── */
+function renderQA(){
+  const el=document.getElementById('qa-list');if(!el)return;
+  el.innerHTML=qaList.map((qa,i)=>`<div class="qa-item"><div class="qa-q">${qa.q}</div><div class="qa-a">${qa.a}</div><button class="qa-del" onclick="delQA(${i})">✕</button></div>`).join('');
+}
+function addQA(){
+  const q=document.getElementById('new-q').value.trim();
+  const a=document.getElementById('new-a').value.trim();
+  if(!q||!a){showToast('⚠️','Please fill in both fields.');return;}
+  qaList.unshift({q,a});
+  document.getElementById('new-q').value='';document.getElementById('new-a').value='';
+  renderQA();showToast('✅','Q&A added! Elliot will use this.');
+}
+function delQA(i){qaList.splice(i,1);renderQA();}
+
+function renderProducts(){
+  const el=document.getElementById('product-list');if(!el)return;
+  el.innerHTML=PRODUCTS.map(p=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;display:flex;align-items:center;gap:10px;">
+      <img src="${p.img}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;" onerror="this.style.display='none'"/>
+      <div style="flex:1;">
+        <div style="font-size:12.5px;font-weight:500;color:var(--text);">${p.name}</div>
+        <div style="font-size:11.5px;color:var(--brand);font-weight:600;">${p.price}</div>
+      </div>
+      <a href="${p.url}" target="_blank" style="font-size:11px;color:var(--brand);text-decoration:underline;">View →</a>
+    </div>`).join('');
+}
+
+function handleFileUpload(input){
+  const files=Array.from(input.files);
+  files.forEach(f=>{
+    uploadedFiles.push({name:f.name,size:(f.size/1024).toFixed(1)+'KB',type:f.type});
+  });
+  renderUploadedFiles();
+  showToast('✅',`${files.length} file(s) uploaded — Elliot is learning!`);
+  input.value='';
+}
+function renderUploadedFiles(){
+  const el=document.getElementById('uploaded-files');if(!el)return;
+  el.innerHTML=uploadedFiles.map((f,i)=>`
+    <div class="uploaded-file">
+      <span class="uploaded-file-icon">${f.name.endsWith('.pdf')?'📄':f.name.endsWith('.xlsx')||f.name.endsWith('.csv')?'📊':'📝'}</span>
+      <span class="uploaded-file-name">${f.name} <span style="color:var(--text-muted);font-size:11px;">(${f.size})</span></span>
+      <button class="uploaded-file-del" onclick="removeFile(${i})">✕</button>
+    </div>`).join('');
+}
+function removeFile(i){uploadedFiles.splice(i,1);renderUploadedFiles();}
+
+/* ── LOGS ── */
+function filterL(el,f){
+  document.querySelectorAll('.lf-tag').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');renderLogs(f);
+}
+function renderLogs(f){
+  const el=document.getElementById('log-list');if(!el)return;
+  const items=f==='all'?logs:logs.filter(l=>l.tags.includes(f));
+  if(items.length===0){el.innerHTML='<p style="font-size:12.5px;color:var(--text-muted);padding:10px 0;">No conversations found.</p>';return;}
+  el.innerHTML=items.map((l)=>`
+    <div class="log-item" onclick="openModal(${logs.indexOf(l)})">
+      <div class="log-hd"><span class="log-name">${l.name}${l.email?` — <span style="font-weight:400;color:var(--text-muted)">${l.email}</span>`:''}</span><span class="log-time">${l.time}</span></div>
+      <div class="log-preview">${l.preview}</div>
+      <div class="log-tags">${l.tags.map(t=>`<span class="ltag ${t}">${t}</span>`).join('')}${l.ord?`<span class="ltag" style="background:var(--accent-light);color:#7a5c28;">${l.ord}</span>`:''}<span style="margin-left:auto;font-size:10.5px;color:var(--brand);">View →</span></div>
+      <div class="email-status"><div class="email-dot"></div>Logged to tablepadspro@gmail.com</div>
+    </div>`).join('');
+}
+function clearLogs(){if(confirm('Clear all conversation logs?')){logs=[];renderLogs('all');showToast('✅','Logs cleared');}}
+function openModal(i){
+  const l=logs[i];
+  document.getElementById('modal-title').textContent=l.name;
+  document.getElementById('modal-sub').textContent=[l.time,l.email,l.ord].filter(Boolean).join(' · ');
+  const body=document.getElementById('modal-body');
+  const convo=l.convo||[];
+  body.innerHTML=convo.length===0?`<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:16px;">No transcript available.</p>`:
+    convo.map(m=>`<div class="m-msg ${m.role}"><div class="m-m-avi">${m.role==='b'?'E':l.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div><div class="m-bub">${m.text.replace(/\n/g,'<br>')}</div></div>`).join('');
+  document.getElementById('modal-footer').innerHTML=l.tags.map(t=>`<span class="ltag ${t}">${t}</span>`).join('')+(l.ord?`<span class="ltag" style="background:var(--accent-light);color:#7a5c28;">${l.ord}</span>`:'')+`<span style="margin-left:auto;font-size:10.5px;color:var(--text-muted);">${convo.length} messages</span>`;
+  document.getElementById('conv-modal').classList.add('open');
+  setTimeout(()=>body.scrollTop=body.scrollHeight,50);
+}
+function closeModal(){document.getElementById('conv-modal').classList.remove('open');}
+function exportCSV(){
+  const rows=logs.map(l=>`"${l.name}","${l.email}","${l.time}","${l.preview}","${l.tags.join(',')}","${l.ord}"`);
+  const blob=new Blob(['Name,Email,Time,Preview,Tags,Order\n'+rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tablepadspro-logs.csv';a.click();
+  showToast('📥','CSV exported!');
+}
+
+/* ── ANALYTICS ── */
+function updateStats(){
+  document.getElementById('s-convos').textContent=sessionStats.convos;
+  document.getElementById('s-leads').textContent=sessionStats.leads;
+  document.getElementById('s-emails').textContent=sessionStats.emails;
+  document.getElementById('s-resolved').textContent=sessionStats.convos>0?Math.round((sessionStats.convos-0)/sessionStats.convos*100)+'%':'0%';
+  const tq=document.getElementById('top-questions');
+  if(sessionStats.questions.length>0){
+    const counts={};
+    sessionStats.questions.forEach(q=>{const k=q.slice(0,45);counts[k]=(counts[k]||0)+1;});
+    tq.innerHTML=Object.entries(counts).slice(0,5).map(([q,c])=>`<div class="fr"><span class="fq">${q}</span><span class="fcnt">${c}</span><div class="fbar" style="width:${Math.min(c*20,60)}px;"></div></div>`).join('');
+  }
+}
+function clearAnalytics(){
+  sessionStats={convos:0,leads:0,emails:0,questions:[]};
+  updateStats();
+  document.getElementById('top-questions').innerHTML='<div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">No conversations yet</span></div>';
+  showToast('✅','Analytics reset');
+}
+function buildBars(){
+  const el=document.getElementById('ana-bars');if(!el||el.children.length>0)return;
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals=[28,35,41,38,52,30,23];const mx=Math.max(...vals);
+  days.forEach((d,i)=>{const c=document.createElement('div');c.className='bc';const h=Math.round(vals[i]/mx*80);c.innerHTML=`<div class="bar" style="height:${h}px;background:${i===4?'var(--brand)':'#c5ddc5'};width:100%;"></div><div class="bday">${d}</div>`;el.appendChild(c);});
+}
+
+/* ── SERVER TEST ── */
+async function testServer(){
+  const url=document.getElementById('server-url').value.trim();
+  const status=document.getElementById('server-status');
+  status.textContent='Testing connection…';status.style.color='#777';
+  try{
+    const r=await fetch(url);
+    const d=await r.json();
+    status.textContent='✅ Connected! Server is running: '+d.status;
+    status.style.color='#16a34a';
+    showToast('✅','Server connected!');
+  }catch(e){
+    status.textContent='❌ Could not connect. Check the URL or wait for Render to wake up.';
+    status.style.color='#dc2626';
+  }
+}
+
+/* ── TOAST ── */
+let toastTimer=null;
+function showToast(icon,msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-icon').textContent=icon;
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+/* ── SATISFACTION RATING ── */
+let ratingShown=false;
+function showRating(){
+  if(ratingShown||history.filter(m=>m.role==='user').length<2) return;
+  ratingShown=true;
+  const msgs=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg b';d.id='rating-card';
+  d.innerHTML=`<div class="m-avi">${elliotSVG(26)}</div><div>
+    <div class="bub" style="background:#fff;border:1px solid var(--border);">
+      <div style="font-size:12.5px;font-weight:500;color:var(--text);margin-bottom:8px;">Was I helpful today? 😊</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${[1,2,3,4,5].map(n=>`<button onclick="submitRating(${n})" style="padding:5px 10px;border:1px solid #d0d0cc;border-radius:8px;background:#fff;cursor:pointer;font-size:18px;transition:all .15s;" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='#d0d0cc'">${'⭐'.repeat(n)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="m-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+  </div>`;
+  msgs.appendChild(d);msgs.scrollTop=99999;
+}
+
+function submitRating(n){
+  const card=document.getElementById('rating-card');
+  if(card){
+    card.querySelector('.bub').innerHTML=`<div style="font-size:13px;color:var(--brand);">${'⭐'.repeat(n)} Thank you for the feedback!</div>`;
+  }
+  sessionStats.ratings=sessionStats.ratings||[];
+  sessionStats.ratings.push(n);
+  showToast('⭐',`Rating: ${n}/5 — thank you!`);
+  if(logs.length>0) logs[0].rating=n;
+  // Send full transcript with rating
+  sendTranscript(n);
+}
+
+/* ── PAGE-AWARE PROACTIVE GREETINGS ── */
+// These simulate what would fire on Shopify based on which page the visitor is on
+const pageGreetings = {
+  'Custom Table Pads': `Hi there! 👋 I see you're looking at custom table pads. Need help measuring your table or getting an instant price quote? I'm Elliot and I'm here to help!`,
+  'Checkout':          `Hi! 👋 I'm Elliot — looks like you're ready to order! Any questions about your order before you check out? I'm happy to help.`,
+  'Round Table Pads':  `Hi! 👋 For a round table I just need the diameter. Want an instant price quote? I'm Elliot — ask me anything!`,
+  'Oval Table Pads':   `Hi! 👋 Oval tables are our specialty! I'm Elliot — for an oval table we'll send you a free tracing kit so we get a perfect fit. Want me to set that up?`,
+  'Extenders':         `Hi! 👋 Table extenders are a great solution for extra seating. I'm Elliot — share your table dimensions and I'll quote you instantly!`,
+  'Colors':            `Hi! 👋 We have 25+ beautiful colors to choose from. I'm Elliot — would you like me to send you free color swatches to see them in person?`,
+  'Home Page':         `Hi there! 👋 Welcome to Table Pads Pro — America's table pad experts for over 45 years. I'm Elliot. How can I help you today?`,
+};
+
+function getPageGreeting(page){
+  for(const [key,msg] of Object.entries(pageGreetings)){
+    if(page&&page.toLowerCase().includes(key.toLowerCase())) return msg;
+  }
+  return `Hi there! 👋 I'm Elliot from Table Pads Pro. How can I help you today?`;
+}
+
+/* ── LANGUAGE DETECTION ── */
+function detectLanguage(txt){
+  const french=/\b(bonjour|merci|oui|non|je|tu|nous|vous|le|la|les|un|une|des|est|sont|avec|pour|dans|sur|comment|combien|quel|quelle)\b/i;
+  const spanish=/\b(hola|gracias|sí|no|yo|tú|nosotros|el|la|los|las|un|una|es|son|con|para|en|cómo|cuánto|cuál|qué|tengo|mesa)\b/i;
+  if(french.test(txt)) return 'fr';
+  if(spanish.test(txt)) return 'es';
+  return 'en';
+}
+
+let detectedLang='en';
+
+/* ── REAL EMAIL via Render server ── */
+async function sendEmailNotification(type, data){
+  const serverURL = document.getElementById('server-url')?.value || SERVER;
+  try {
+    await fetch(`${serverURL}/email/${type}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    console.log(`✅ Email sent: ${type}`);
+  } catch(e) {
+    console.warn('Email send failed:', e.message);
+  }
+}
+
+async function sendTranscript(rating=null){
+  const msgs = history.map(m => ({
+    role: m.role,
+    content: typeof m.content === 'string' ? m.content : '[image]'
+  }));
+  await sendEmailNotification('transcript', {
+    visitorName: visitorName || currentVis.nm,
+    visitorEmail: '',
+    messages: msgs,
+    rating: rating
+  });
+}
+
+/* ── CONVERSATION END DETECTION ── */
+const goodbyeWords = /\b(bye|goodbye|thanks|thank you|thank u|gracias|merci|that'?s? all|that is all|no thanks|no thank you|i'm good|im good|perfect|great thanks|all good|got it|got what i need|done|take care|have a good|talk later|talk soon)\b/i;
+
+function checkConversationEnd(txt){
+  if(ratingShown) return;
+  if(!goodbyeWords.test(txt)) return;
+  if(history.filter(m=>m.role==='user').length < 2) return;
+  // Elliot says goodbye + anything else + shows rating
+  setTimeout(()=>{
+    const closeMsg = `It was a pleasure helping you! 😊 Is there anything else I can help you with before you go?`;
+    addMsg('b', closeMsg);
+    history.push({role:'assistant', content:closeMsg});
+    // Show rating card after a short pause
+    setTimeout(showRating, 1500);
+  }, 800);
+}
+
+/* ── INIT ── */
+window.addEventListener('load',()=>{
+  const page=currentVis.pg||'Home Page';
+  const g=getPageGreeting(page);
+  addMsg('b',g);history.push({role:'assistant',content:g});
+  renderQA();buildBars();renderLogs('all');
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+});
+</script>
+</body>
+</html>
