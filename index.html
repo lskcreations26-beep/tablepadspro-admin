@@ -1436,7 +1436,7 @@ function sw(tab){
   if(tab==='logs')renderLogs('all');
   if(tab==='leads'){fetchLeads();}
   if(tab==='analytics'){fetchAnalytics();}
-  if(tab==='training'){renderQA();renderProducts();}
+  if(tab==='training'){loadQAFromServer();renderProducts();}
 }
 function swT(el,s){
   document.querySelectorAll('.tnav').forEach(t=>t.classList.remove('active'));
@@ -1453,9 +1453,11 @@ function swS(el,s){
   document.getElementById('s-'+s).classList.add('active');
 }
 
+
 /* ── TRAINING ── */
 function renderQA(){
   const el=document.getElementById('qa-list');if(!el)return;
+  if(!qaList.length){el.innerHTML='<div style="color:var(--text-muted);font-size:12.5px;padding:12px 0;">No Q&A pairs yet. Add some above to train Elliot!</div>';return;}
   el.innerHTML=qaList.map((qa,i)=>`<div class="qa-item"><div class="qa-q">${qa.q}</div><div class="qa-a">${qa.a}</div><button class="qa-del" onclick="delQA(${i})">✕</button></div>`).join('');
 }
 function addQA(){
@@ -1464,9 +1466,31 @@ function addQA(){
   if(!q||!a){showToast('⚠️','Please fill in both fields.');return;}
   qaList.unshift({q,a});
   document.getElementById('new-q').value='';document.getElementById('new-a').value='';
-  renderQA();showToast('✅','Q&A added! Elliot will use this.');
+  saveQAToServer();
+  renderQA();showToast('✅','Q&A saved! Elliot will use this immediately. 🧠');
 }
-function delQA(i){qaList.splice(i,1);renderQA();}
+function delQA(i){
+  if(!confirm('Delete this Q&A pair?'))return;
+  qaList.splice(i,1);
+  saveQAToServer();
+  renderQA();
+  showToast('🗑','Q&A deleted');
+}
+function saveQAToServer(){
+  fetch(ADMIN_SERVER+'/admin/qa',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({qa:qaList})
+  }).then(r=>r.json())
+  .then(d=>{if(d.ok)console.log('✅ Q&A synced to server');})
+  .catch(()=>showToast('⚠️','Server sync failed — changes saved locally only'));
+}
+function loadQAFromServer(){
+  fetch(ADMIN_SERVER+'/admin/qa')
+    .then(r=>r.json())
+    .then(d=>{if(d.qa&&d.qa.length>0){qaList=d.qa;}renderQA();})
+    .catch(()=>renderQA());
+}
+
 
 function renderProducts(){
   const el=document.getElementById('product-list');if(!el)return;
