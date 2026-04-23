@@ -330,7 +330,7 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
       </div>
     </div>
     <div class="header-right">
-      <div class="status-pill"><div class="status-dot"></div>Live · 3 visitors</div>
+      <div class="status-pill"><div class="status-dot"></div>Live · <span id="live-count">0</span> visitors</div>
       <button class="live-mode-btn" id="live-mode-btn" onclick="toggleLiveMode()">🎙 Go Live</button>
     </div>
   </div>
@@ -347,32 +347,26 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
   <div class="panel active" id="panel-chat">
     <div class="chat-wrap">
       <div class="sidebar">
-        <div class="sid-hd">Active visitors</div>
-        <div class="vis active" onclick="selVis(this,'Jennifer M.','JM','Custom Table Pads','#TP-2847')">
-          <div class="vis-name"><span class="dot-green"></span>Jennifer M.</div>
-          <div class="vis-meta">Custom Table Pads</div>
-        </div>
-        <div class="vis" onclick="selVis(this,'Robert K.','RK','Checkout','#TP-2851')">
-          <div class="vis-name"><span class="dot-green"></span>Robert K.</div>
-          <div class="vis-meta">Checkout</div>
-        </div>
-        <div class="vis" onclick="selVis(this,'Sandra L.','SL','Home Page','null')">
-          <div class="vis-name"><span class="dot-green"></span>Sandra L.</div>
-          <div class="vis-meta">Home page</div>
+        <div class="sid-hd">Active visitors <span id="vis-count" style="background:var(--brand);color:#fff;border-radius:10px;padding:1px 7px;font-size:9px;margin-left:4px;">0</span></div>
+        <div id="vis-list">
+          <div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:11.5px;line-height:1.6;">
+            <div style="font-size:24px;margin-bottom:8px;">👥</div>
+            No active visitors yet.<br>When customers chat on your website they'll appear here.
+          </div>
         </div>
       </div>
       <div class="chat-main">
         <div class="chat-hd">
           <div class="chat-hd-l">
-            <div class="avi" id="c-avi">JM</div>
+            <div class="avi" id="c-avi">?</div>
             <div>
-              <div class="vis-nm" id="c-nm">Jennifer M.</div>
-              <div class="vis-pg" id="c-pg">Custom Table Pads</div>
+              <div class="vis-nm" id="c-nm">No visitor selected</div>
+              <div class="vis-pg" id="c-pg">Select a visitor from the left</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span class="live-badge" id="live-badge">🔴 LIVE MODE</span>
-            <button class="ord-pill" id="ord-pill" onclick="showOrder()">Order #TP-2847</button>
+            <button class="ord-pill" id="ord-pill" onclick="showOrder()" style="display:none;">Order</button>
           </div>
         </div>
         <div class="msgs" id="msgs"></div>
@@ -613,7 +607,7 @@ const ml=(a)=>`<a href="mailto:${a}" style="color:var(--brand);">${a}</a>`;
 let history=[], loading=false, leadCaptured=false, pendingImg=null;
 let flow=null, swatchAddress='', visitorName='';
 let liveMode=false;
-let currentVis={nm:'Jennifer M.',ini:'JM',pg:'Custom Table Pads',ord:'#TP-2847'};
+let currentVis={nm:'',ini:'?',pg:'',ord:'null'};
 let orderShown=false;
 let sessionStats={convos:0,leads:0,emails:0,questions:[]};
 
@@ -624,11 +618,7 @@ let qaList=[
   {q:'Is it safe for antique tables?',a:'Absolutely. Soft velvet backing, no adhesives, fully breathable — trusted by antique collectors for decades.'},
 ];
 
-let logs=[
-  {name:'Patricia Webb',email:'pwebb@email.com',time:'Today 11:42 AM',preview:'Oval table — pattern kit requested.',tags:['lead','resolved'],ord:'',convo:[{role:'b',text:"Hi! I'm Elliot. How can I help?"},{role:'u',text:'I have an oval table'},{role:'b',text:'Great! For oval tables we need a tracing. Could I have your mailing address to send the free kit?'},{role:'u',text:'45 Maple Drive, Woodmere NY 11598'},{role:'b',text:'Perfect! Kit is on its way to 45 Maple Drive! 🎉'}]},
-  {name:'Tom Garfield',email:'tom.g@yahoo.com',time:'Today 10:18 AM',preview:'Pricing for 72" rectangular table.',tags:['lead','resolved'],ord:'#TP-2844',convo:[{role:'b',text:"Hi! I'm Elliot. How can I help?"},{role:'u',text:'Price for 42x72 table?'},{role:'b',text:'For that size, $350–$550 depending on color. Want a free exact quote?'}]},
-  {name:'Unknown visitor',email:'',time:'Yesterday 3:55 PM',preview:'Asked about care and cleaning.',tags:['resolved'],ord:'',convo:[{role:'b',text:"Hi! I'm Elliot."},{role:'u',text:'How do I clean my table pad?'},{role:'b',text:'Easy — wipe with damp cloth + mild soap. No bleach. Store flat. Lasts 20–30 years!'}]},
-];
+let logs=[];
 
 let uploadedFiles=[];
 
@@ -1315,7 +1305,9 @@ function sendLiveReply(){
   inp.value='';
   addMsg('admin-reply',txt);
   history.push({role:'assistant',content:txt});
-  showToast('✅','Reply sent to customer!');
+  // Send to real visitor on website
+  if(selectedSessionId) sendAdminMessage(txt);
+  showToast('✅','Reply sent to visitor!');
 }
 
 /* ── LEAD FORM ── */
@@ -1680,13 +1672,118 @@ function checkConversationEnd(txt){
   }, 800);
 }
 
+/* ── REAL-TIME ADMIN POLLING ── */
+const ADMIN_SERVER = 'https://tablepadspro-chatbot-production.up.railway.app';
+let activeConversations = {};
+let selectedSessionId = null;
+
+function pollConversations() {
+  fetch(ADMIN_SERVER + '/admin/conversations')
+    .then(r => r.json())
+    .then(d => {
+      const convs = d.conversations || [];
+      activeConversations = {};
+      convs.forEach(c => { activeConversations[c.sessionId] = c; });
+
+      // Update visitor count
+      document.getElementById('vis-count').textContent = convs.length;
+      document.getElementById('live-count').textContent = convs.length;
+
+      // Update sidebar
+      const list = document.getElementById('vis-list');
+      if(convs.length === 0) {
+        list.innerHTML = `<div style="padding:20px 12px;text-align:center;color:var(--text-muted);font-size:11.5px;line-height:1.6;">
+          <div style="font-size:24px;margin-bottom:8px;">👥</div>
+          No active visitors yet.<br>When customers chat on your website they'll appear here.
+        </div>`;
+        return;
+      }
+
+      // Sort by lastSeen
+      convs.sort((a,b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+
+      list.innerHTML = convs.map(c => {
+        const lastMsg = c.messages.filter(m=>m.role==='user').slice(-1)[0];
+        const preview = lastMsg ? lastMsg.content.substring(0,30)+'...' : 'Browsing...';
+        const isSelected = c.sessionId === selectedSessionId;
+        const initials = c.visitorName.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() || 'V';
+        const timeSince = getTimeSince(c.lastSeen);
+        return `<div class="vis ${isSelected?'active':''}" onclick="selectConversation('${c.sessionId}')">
+          <div class="vis-name"><span class="dot-green"></span>${c.visitorName}</div>
+          <div class="vis-meta">${c.page}</div>
+          <div class="vis-meta" style="font-size:9.5px;color:#aaa;">${preview}</div>
+          <div class="vis-meta" style="font-size:9px;color:#bbb;">${timeSince}</div>
+        </div>`;
+      }).join('');
+    }).catch(() => {});
+}
+
+function getTimeSince(iso) {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if(diff < 60) return 'Just now';
+  if(diff < 3600) return Math.floor(diff/60) + 'm ago';
+  return Math.floor(diff/3600) + 'h ago';
+}
+
+function selectConversation(sessionId) {
+  selectedSessionId = sessionId;
+  const conv = activeConversations[sessionId];
+  if(!conv) return;
+
+  // Update header
+  const initials = conv.visitorName.split(' ').map(w=>w[0]).join('').substring(0,2) || 'V';
+  document.getElementById('c-avi').textContent = initials;
+  document.getElementById('c-nm').textContent = conv.visitorName;
+  document.getElementById('c-pg').textContent = conv.page;
+  document.getElementById('ord-pill').style.display = 'none';
+
+  // Update currentVis for live mode
+  currentVis = {nm: conv.visitorName, ini: initials, pg: conv.page, ord: 'null'};
+
+  // Show conversation in chat window
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML = '';
+  conv.messages.forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'msg ' + (m.role === 'assistant' ? 'b' : 'u');
+    const clean = (m.content||'').replace(/\*\*/g,'').replace(/\*/g,'').replace(/\n/g,'<br>');
+    const avi = m.role === 'assistant' ? elliotSVG(26) : initials;
+    d.innerHTML = `<div class="m-avi">${avi}</div><div><div class="bub">${clean}</div></div>`;
+    msgs.appendChild(d);
+  });
+  msgs.scrollTop = 99999;
+
+  // Update sidebar active state
+  document.querySelectorAll('.vis').forEach(v => v.classList.remove('active'));
+  event.currentTarget && event.currentTarget.classList.add('active');
+}
+
+// Admin sends message to visitor via server
+async function sendAdminMessage(txt) {
+  if(!selectedSessionId || !txt) return;
+  await fetch(ADMIN_SERVER + '/admin/send', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({sessionId: selectedSessionId, message: txt})
+  });
+  addMsg('admin-reply', txt);
+  showToast('✅','Message sent to visitor!');
+}
+
 /* ── INIT ── */
 window.addEventListener('load',()=>{
-  const page=currentVis.pg||'Home Page';
-  const g=getPageGreeting(page);
-  addMsg('b',g);history.push({role:'assistant',content:g});
+  // Show empty state in chat
+  document.getElementById('msgs').innerHTML=`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);text-align:center;padding:40px 20px;gap:10px;">
+      <div style="font-size:36px;">💬</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text);">No visitor selected</div>
+      <div style="font-size:12.5px;line-height:1.6;">When customers chat on tablepadspro.com<br>they will appear in the sidebar on the left.</div>
+    </div>`;
   renderQA();buildBars();renderLogs('all');
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+  // Poll for real conversations every 5 seconds
+  pollConversations();
+  setInterval(pollConversations, 5000);
 });
 </script>
 </body>
