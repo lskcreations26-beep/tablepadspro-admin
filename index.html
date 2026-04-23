@@ -6,6 +6,21 @@
 <title>TablePadsPro — Admin Dashboard v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
+/* ── PASSWORD SCREEN ── */
+#tpp-login{position:fixed;inset:0;background:#1a1a1a;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;gap:0;}
+.login-box{background:#1e4420;border-radius:20px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:center;}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#fff;margin-bottom:4px;}
+.login-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:30px;text-transform:uppercase;letter-spacing:.1em;}
+.login-label{font-size:12px;color:rgba(255,255,255,.6);text-align:left;display:block;margin-bottom:6px;}
+.login-input{width:100%;padding:12px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;margin-bottom:16px;}
+.login-input:focus{border-color:rgba(255,255,255,.4);}
+.login-input::placeholder{color:rgba(255,255,255,.3);}
+.login-btn{width:100%;padding:13px;border-radius:10px;border:none;background:#c8a96e;color:#1a1a1a;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;}
+.login-btn:hover{background:#d4b87a;}
+.login-error{color:#f87171;font-size:12.5px;margin-top:10px;display:none;}
+.login-footer{color:rgba(255,255,255,.3);font-size:11px;margin-top:20px;}
+</style>
+<style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --brand:#2C5F2E;--brand-light:#e8f0e8;--brand-mid:#3d7a3f;--brand-dark:#1e4420;
@@ -265,6 +280,45 @@ textarea.fi{min-height:80px;resize:vertical;line-height:1.5;}
 </style>
 </head>
 <body>
+
+<!-- PASSWORD LOGIN SCREEN -->
+<div id="tpp-login">
+  <div class="login-box">
+    <div class="login-logo">Table Pads Pro</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <label class="login-label">Password</label>
+    <input class="login-input" id="login-pw" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkLogin()"/>
+    <button class="login-btn" onclick="checkLogin()">Sign In →</button>
+    <div class="login-error" id="login-error">❌ Incorrect password. Please try again.</div>
+    <div class="login-footer">Table Pads Pro · Secure Admin Access</div>
+  </div>
+</div>
+
+<script>
+// ── PASSWORD PROTECTION ──
+// Change 'TablePads2024!' to any password you want
+const ADMIN_PASSWORD = 'TablePads2024!';
+
+function checkLogin(){
+  const pw = document.getElementById('login-pw').value;
+  if(pw === ADMIN_PASSWORD){
+    document.getElementById('tpp-login').style.display = 'none';
+    sessionStorage.setItem('tpp-admin-auth', '1');
+  } else {
+    const err = document.getElementById('login-error');
+    err.style.display = 'block';
+    document.getElementById('login-pw').value = '';
+    document.getElementById('login-pw').focus();
+    setTimeout(()=>err.style.display='none', 3000);
+  }
+}
+
+// Auto-login if already authenticated this session
+if(sessionStorage.getItem('tpp-admin-auth') === '1'){
+  document.getElementById('tpp-login').style.display = 'none';
+}
+</script>
+
 <div class="app">
 
   <div class="app-header">
