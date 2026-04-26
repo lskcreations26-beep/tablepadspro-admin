@@ -340,6 +340,7 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
     <button class="tab" onclick="sw('training')">🎓 Training</button>
     <button class="tab" onclick="sw('logs')">📋 Logs</button>
     <button class="tab" onclick="sw('leads')">🎯 Leads</button>
+    <button class="tab" onclick="sw('ratings')">⭐ Ratings</button>
     <button class="tab" onclick="sw('analytics')">📊 Analytics</button>
     <button class="tab" onclick="sw('settings')">⚙️ Settings</button>
   </div>
@@ -512,6 +513,33 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
           </thead>
           <tbody id="leads-body">
             <tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RATINGS -->
+  <div class="panel" id="panel-ratings">
+    <div class="logs-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);">⭐ Customer Ratings</div>
+        <button class="clear-btn" onclick="fetchRatings()">🔄 Refresh</button>
+      </div>
+      <div id="ratings-summary" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;"></div>
+      <div style="overflow-x:auto;">
+        <table id="ratings-table" style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead>
+            <tr style="background:var(--brand);color:#fff;text-align:left;">
+              <th style="padding:10px 12px;border-radius:8px 0 0 0;">Rating</th>
+              <th style="padding:10px 12px;">Name</th>
+              <th style="padding:10px 12px;">Email</th>
+              <th style="padding:10px 12px;">Context</th>
+              <th style="padding:10px 12px;border-radius:0 8px 0 0;">Time</th>
+            </tr>
+          </thead>
+          <tbody id="ratings-body">
+            <tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1429,12 +1457,13 @@ function ar(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,
 
 /* ── TABS ── */
 function sw(tab){
-  const tabs=['chat','training','logs','analytics','settings'];
+  const tabs=['chat','training','logs','leads','ratings','analytics','settings'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+tab).classList.add('active');
-  if(tab==='logs')renderLogs('all');
+  if(tab==='logs'){fetchRealLogs();}
   if(tab==='leads'){fetchLeads();}
+  if(tab==='ratings'){fetchRatings();}
   if(tab==='analytics'){fetchAnalytics();}
   if(tab==='training'){loadQAFromServer();renderProducts();}
 }
@@ -1773,6 +1802,60 @@ function exportLeadsCSV() {
   a.click();
   showToast('📥','Leads exported to CSV!');
 }
+
+/* ── RATINGS ── */
+let ratingsData = [];
+function fetchRatings() {
+  fetch(ADMIN_SERVER + '/admin/ratings')
+    .then(r => r.json())
+    .then(d => {
+      ratingsData = d.ratings || [];
+      renderRatings();
+    }).catch(() => {
+      document.getElementById('ratings-body').innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#e55;">Could not load ratings.</td></tr>';
+    });
+}
+function renderRatings() {
+  const tbody = document.getElementById('ratings-body');
+  const summary = document.getElementById('ratings-summary');
+  if(!ratingsData.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-muted);">No ratings yet. Ratings appear after customers complete a conversation.</td></tr>';
+    summary.innerHTML = '';
+    return;
+  }
+  // Summary stats
+  const avg = (ratingsData.reduce((s,r)=>s+r.rating,0)/ratingsData.length).toFixed(1);
+  const counts = [1,2,3,4,5].map(n => ratingsData.filter(r=>r.rating===n).length);
+  summary.innerHTML = `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:140px;text-align:center;">
+      <div style="font-size:32px;font-weight:700;color:var(--brand);">${avg}</div>
+      <div style="font-size:13px;color:var(--text-muted);">Avg Rating</div>
+      <div style="font-size:18px;">${'⭐'.repeat(Math.round(avg))}</div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 20px;min-width:140px;text-align:center;">
+      <div style="font-size:32px;font-weight:700;color:var(--brand);">${ratingsData.length}</div>
+      <div style="font-size:13px;color:var(--text-muted);">Total Ratings</div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 20px;flex:1;">
+      ${[5,4,3,2,1].map(n=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:11px;width:20px;text-align:right;">${n}⭐</span>
+          <div style="flex:1;background:#f0f0ec;border-radius:4px;height:8px;">
+            <div style="background:var(--brand);height:8px;border-radius:4px;width:${ratingsData.length?Math.round(counts[n-1]/ratingsData.length*100):0}%;"></div>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted);width:24px;">${counts[n-1]}</span>
+        </div>`).join('')}
+    </div>`;
+  // Table rows
+  tbody.innerHTML = ratingsData.map((r,i)=>`
+    <tr style="background:${i%2===0?'#fff':'var(--surface2)'};border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;font-size:16px;">${'⭐'.repeat(r.rating)} <span style="font-size:11px;color:var(--text-muted);">${r.rating}/5</span></td>
+      <td style="padding:9px 12px;font-weight:500;">${r.name||'—'}</td>
+      <td style="padding:9px 12px;color:var(--brand);font-size:12px;">${r.email||'—'}</td>
+      <td style="padding:9px 12px;font-size:11.5px;">${r.context||'—'}</td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--text-muted);">${r.time||'—'}</td>
+    </tr>`).join('');
+}
 const ADMIN_SERVER = 'https://tablepadspro-chatbot-production.up.railway.app';
 let activeConversations = {};
 let selectedSessionId = null;
@@ -1823,21 +1906,19 @@ function fetchRealLogs() {
     .then(r => r.json())
     .then(d => {
       const serverLogs = d.logs || [];
-      if(serverLogs.length > 0) {
-        logs = serverLogs.map(l => ({
-          name: l.visitorName || 'Visitor',
-          email: l.visitorEmail || '',
-          time: l.time || 'Recent',
-          preview: (l.messages.filter(m=>m.role==='user')[0]?.content || '').substring(0,60),
-          tags: [l.visitorEmail ? 'lead' : 'visitor', l.rating ? 'rated' : 'resolved'],
-          ord: '',
-          source: l.source || 'Direct',
-          rating: l.rating,
-          convo: l.messages.map(m => ({role: m.role==='assistant'?'b':'u', text: m.content||''}))
-        }));
-        renderLogs('all');
-      }
-    }).catch(() => {});
+      logs = serverLogs.map(l => ({
+        name: l.visitorName || 'Visitor',
+        email: l.visitorEmail || '',
+        time: l.time || 'Recent',
+        preview: ((l.messages||[]).filter(m=>m.role==='user')[0]?.content || '').substring(0,60),
+        tags: [l.visitorEmail ? 'lead' : 'visitor', l.rating ? 'rated' : 'resolved'],
+        ord: '',
+        source: l.source || 'Direct',
+        rating: l.rating,
+        convo: (l.messages||[]).map(m => ({role: m.role==='assistant'?'b':'u', text: m.content||''}))
+      }));
+      renderLogs('all');
+    }).catch(() => { renderLogs('all'); });
 }
 
 // Fetch analytics from server
@@ -1846,17 +1927,24 @@ function fetchAnalytics() {
     .then(r => r.json())
     .then(d => {
       document.getElementById('s-convos').textContent = d.total || 0;
-      document.getElementById('s-leads').textContent = d.withEmail || 0;
-      if(d.avgRating) document.getElementById('s-resolved').textContent = d.avgRating + '⭐';
+      document.getElementById('s-leads').textContent = d.leadsTotal || d.withEmail || 0;
+      document.getElementById('s-emails').textContent = d.activeNow || 0;
+      if(d.avgRating && d.avgRating > 0) {
+        document.getElementById('s-resolved').textContent = d.avgRating + '⭐';
+      } else {
+        document.getElementById('s-resolved').textContent = '—';
+      }
       // Show traffic sources
       const tq = document.getElementById('top-questions');
       if(d.sources && Object.keys(d.sources).length > 0) {
         const sorted = Object.entries(d.sources).sort((a,b)=>b[1]-a[1]);
         const total = sorted.reduce((s,[,v])=>s+v,0);
-        tq.innerHTML = sorted.slice(0,6).map(([src,cnt]) =>
-          `<div class="fr"><span class="fq">${src}</span><span class="fcnt">${cnt}</span>
-          <div class="fbar" style="width:${Math.round(cnt/total*80)}px;background:var(--brand);"></div></div>`
+        tq.innerHTML = sorted.slice(0,8).map(([src,cnt]) =>
+          `<div class="fr"><span class="fq">${src}</span><span class="fcnt">${cnt} (${Math.round(cnt/total*100)}%)</span>
+          <div class="fbar" style="width:${Math.round(cnt/total*100)}px;background:var(--brand);height:4px;border-radius:2px;margin-top:4px;"></div></div>`
         ).join('');
+      } else {
+        tq.innerHTML = '<div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">Analytics build up as customers chat. Check back soon!</span></div>';
       }
     }).catch(() => {});
 }
