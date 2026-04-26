@@ -1999,7 +1999,7 @@ window.addEventListener('load',()=>{
       <div style="font-size:14px;font-weight:500;color:var(--text);">No visitor selected</div>
       <div style="font-size:12.5px;line-height:1.6;">When customers chat on tablepadspro.com<br>they will appear in the sidebar on the left.</div>
     </div>`;
-  renderQA();buildBars();renderLogs('all');
+  renderQA();fetchAnalytics();fetchRealLogs();fetchLeads();
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
   // Poll for real conversations every 5 seconds
   pollConversations();
