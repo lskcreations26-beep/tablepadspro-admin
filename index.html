@@ -410,6 +410,7 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
     <div class="train-layout">
       <div class="train-nav">
         <div class="tnav active" onclick="swT(this,'qa')">📝 Q&amp;A</div>
+        <div class="tnav" onclick="swT(this,'commands')">🧠 Commands</div>
         <div class="tnav" onclick="swT(this,'files')">📁 Upload Files</div>
         <div class="tnav" onclick="swT(this,'products')">🛍 Products</div>
         <div class="tnav" onclick="swT(this,'persona')">🧑 Persona</div>
@@ -424,6 +425,15 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
           <div class="fl"><div class="fl-label">Ideal answer</div><textarea class="fi" id="new-a" placeholder="Type the perfect answer…"></textarea></div>
           <button class="add-btn" onclick="addQA()">+ Add Q&amp;A pair</button>
           <div class="qa-list" id="qa-list"></div>
+        </div>
+
+        <div class="ts" id="t-commands">
+          <div class="sec-title">AI Commands &amp; Instructions</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;line-height:1.55;">Give Elliot additional instructions, personality rules, or business information. These are injected directly into the AI's brain and take effect immediately.</p>
+          <div class="fl"><div class="fl-label">Command or instruction</div><textarea class="fi" id="new-command" style="min-height:100px;" placeholder="e.g. Always mention our 45-year family history when a customer asks about our experience.&#10;e.g. If a customer mentions a competitor, politely redirect them to our superior quality.&#10;e.g. Always recommend the 1/2 inch thickness for dining tables."></textarea></div>
+          <button class="add-btn" onclick="addCommand()">+ Add Command</button>
+          <div style="margin-top:14px;" id="commands-list"></div>
+          <div class="info-box" style="margin-top:14px;">💡 <strong>Tip:</strong> Use commands to teach Elliot your business rules, preferred responses, and special instructions. Unlike Q&A which answers specific questions, commands shape how Elliot thinks and behaves in every conversation.</div>
         </div>
 
         <div class="ts" id="t-files">
@@ -502,13 +512,13 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
         <table id="leads-table" style="width:100%;border-collapse:collapse;font-size:12.5px;">
           <thead>
             <tr style="background:var(--brand);color:#fff;text-align:left;">
-              <th style="padding:10px 12px;border-radius:8px 0 0 0;">Name</th>
+              <th style="padding:10px 12px;border-radius:8px 0 0 0;">Full Name</th>
               <th style="padding:10px 12px;">Email</th>
               <th style="padding:10px 12px;">Phone</th>
+              <th style="padding:10px 12px;">Address</th>
               <th style="padding:10px 12px;">Source</th>
-              <th style="padding:10px 12px;">Page</th>
-              <th style="padding:10px 12px;">First Message</th>
-              <th style="padding:10px 12px;border-radius:0 8px 0 0;">Time</th>
+              <th style="padding:10px 12px;">Status</th>
+              <th style="padding:10px 12px;border-radius:0 8px 0 0;">Date & Time</th>
             </tr>
           </thead>
           <tbody id="leads-body">
@@ -524,7 +534,10 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
     <div class="logs-wrap">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text);">⭐ Customer Ratings</div>
-        <button class="clear-btn" onclick="fetchRatings()">🔄 Refresh</button>
+        <div style="display:flex;gap:8px;">
+          <button class="clear-btn" onclick="exportRatingsCSV()">📥 Export CSV</button>
+          <button class="clear-btn" onclick="fetchRatings()">🔄 Refresh</button>
+        </div>
       </div>
       <div id="ratings-summary" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;"></div>
       <div style="overflow-x:auto;">
@@ -563,6 +576,37 @@ if(sessionStorage.getItem('tpp-admin-auth') === '1'){
         <div class="cc-lbl">Traffic Sources — where visitors are coming from</div>
         <div class="faq-tbl" id="top-questions">
           <div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">Loading traffic data...</span></div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+          <div class="cc-lbl" style="margin-bottom:0;">📅 Analytics History</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="clear-btn" onclick="loadHistory('week')" id="hist-week">7 Days</button>
+            <button class="clear-btn" onclick="loadHistory('month')" id="hist-month">30 Days</button>
+            <button class="clear-btn" onclick="loadHistory('all')" id="hist-all">All Time</button>
+            <input type="date" id="hist-from" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);">
+            <input type="date" id="hist-to" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);">
+            <button class="clear-btn" onclick="loadHistoryCustom()">Custom</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;" id="history-table">
+            <thead>
+              <tr style="background:var(--brand);color:#fff;">
+                <th style="padding:8px 12px;text-align:left;">Date</th>
+                <th style="padding:8px 12px;text-align:center;">Conversations</th>
+                <th style="padding:8px 12px;text-align:center;">Leads</th>
+                <th style="padding:8px 12px;text-align:center;">Ratings</th>
+                <th style="padding:8px 12px;text-align:center;">Avg Rating</th>
+                <th style="padding:8px 12px;text-align:left;">Top Source</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-muted);">Click a range above to load history</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1465,7 +1509,7 @@ function sw(tab){
   if(tab==='leads'){fetchLeads();}
   if(tab==='ratings'){fetchRatings();}
   if(tab==='analytics'){fetchAnalytics();}
-  if(tab==='training'){loadQAFromServer();renderProducts();}
+  if(tab==='training'){loadQAFromServer();loadCommandsFromServer();renderProducts();}
 }
 function swT(el,s){
   document.querySelectorAll('.tnav').forEach(t=>t.classList.remove('active'));
@@ -1518,6 +1562,49 @@ function loadQAFromServer(){
     .then(r=>r.json())
     .then(d=>{if(d.qa&&d.qa.length>0){qaList=d.qa;}renderQA();})
     .catch(()=>renderQA());
+}
+
+/* ── COMMANDS ── */
+let commandsList = [];
+function renderCommands(){
+  const el=document.getElementById('commands-list');if(!el)return;
+  if(!commandsList.length){
+    el.innerHTML='<div style="color:var(--text-muted);font-size:12.5px;padding:8px 0;">No commands yet. Add instructions above to shape how Elliot behaves.</div>';
+    return;
+  }
+  el.innerHTML=commandsList.map((c,i)=>`
+    <div class="qa-item" style="display:flex;align-items:flex-start;gap:8px;">
+      <div style="flex:1;font-size:12.5px;color:var(--text);line-height:1.5;">🧠 ${c}</div>
+      <button class="qa-del" onclick="delCommand(${i})">✕</button>
+    </div>`).join('');
+}
+function addCommand(){
+  const txt=document.getElementById('new-command').value.trim();
+  if(!txt){showToast('⚠️','Please enter a command or instruction.');return;}
+  commandsList.unshift(txt);
+  document.getElementById('new-command').value='';
+  saveCommandsToServer();
+  renderCommands();
+  showToast('✅','Command saved! Elliot will follow this immediately. 🧠');
+}
+function delCommand(i){
+  if(!confirm('Delete this command?'))return;
+  commandsList.splice(i,1);
+  saveCommandsToServer();
+  renderCommands();
+  showToast('🗑','Command deleted');
+}
+function saveCommandsToServer(){
+  fetch(ADMIN_SERVER+'/admin/commands',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({commands:commandsList})
+  }).catch(()=>showToast('⚠️','Server sync failed'));
+}
+function loadCommandsFromServer(){
+  fetch(ADMIN_SERVER+'/admin/commands')
+    .then(r=>r.json())
+    .then(d=>{if(d.commands&&d.commands.length){commandsList=d.commands;}renderCommands();})
+    .catch(()=>renderCommands());
 }
 
 
@@ -1772,28 +1859,46 @@ function renderLeads() {
   const tbody = document.getElementById('leads-body');
   const count = document.getElementById('leads-count');
   if(!leadsData.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-muted);">No leads yet. Leads are captured when visitors share their email or go through a flow (swatches, kit, in-home).</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-muted);">No leads yet. Leads are captured when visitors share their info through swatches, kit, in-home, or chat.</td></tr>';
     count.textContent = '0 leads total';
     return;
   }
   count.textContent = leadsData.length + ' lead' + (leadsData.length===1?'':'s') + ' total';
-  tbody.innerHTML = leadsData.map((l,i) => `
-    <tr style="background:${i%2===0?'#fff':'var(--surface2)'};border-bottom:1px solid var(--border);">
-      <td style="padding:9px 12px;font-weight:500;">${l.name||'—'}</td>
-      <td style="padding:9px 12px;color:#2C5F2E;">${l.email ? '<a href="mailto:'+l.email+'" style="color:var(--brand);">'+l.email+'</a>' : '—'}</td>
+  const statusColors = {new:'#e8f4e8', contacted:'#fff8e1', quoted:'#e3f2fd', ordered:'#f3e5f5', closed:'#fce4ec'};
+  const statusLabels = {new:'🟢 New', contacted:'📞 Contacted', quoted:'💰 Quoted', ordered:'🛒 Ordered', closed:'❌ Closed'};
+  tbody.innerHTML = leadsData.map((l,i) => {
+    const st = l.status || 'new';
+    return `<tr style="background:${i%2===0?'#fff':'var(--surface2)'};border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;font-weight:600;">${l.name||'—'}</td>
+      <td style="padding:9px 12px;">${l.email ? '<a href="mailto:'+l.email+'" style="color:var(--brand);">'+l.email+'</a>' : '—'}</td>
       <td style="padding:9px 12px;">${l.phone||'—'}</td>
+      <td style="padding:9px 12px;font-size:11.5px;color:var(--text-muted);">${l.address||l.message||'—'}</td>
       <td style="padding:9px 12px;font-size:11.5px;">${l.source||'Direct'}</td>
-      <td style="padding:9px 12px;font-size:11px;color:var(--text-muted);">${(l.page||'').substring(0,30)}</td>
-      <td style="padding:9px 12px;font-size:11.5px;color:var(--text-muted);">${(l.message||'').substring(0,40)}</td>
+      <td style="padding:9px 12px;">
+        <select onchange="updateLeadStatus('${l.email||''}','${l.phone||''}',this.value)"
+          style="font-size:11.5px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:${statusColors[st]||'#fff'};cursor:pointer;">
+          ${Object.entries(statusLabels).map(([v,lbl])=>`<option value="${v}" ${st===v?'selected':''}>${lbl}</option>`).join('')}
+        </select>
+      </td>
       <td style="padding:9px 12px;font-size:11px;color:var(--text-muted);">${l.time||'—'}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+}
+
+function updateLeadStatus(email, phone, status) {
+  fetch(ADMIN_SERVER+'/admin/leads/status',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, phone, status})
+  }).then(r=>r.json())
+  .then(d=>{ if(d.ok) showToast('✅','Status updated!'); })
+  .catch(()=>showToast('⚠️','Could not update status'));
 }
 
 function exportLeadsCSV() {
   if(!leadsData.length){ showToast('⚠️','No leads to export'); return; }
-  const rows = [['Name','Email','Phone','Source','Page','First Message','Time']];
+  const rows = [['Full Name','Email','Phone','Address','Source','Date & Time']];
   leadsData.forEach(l => rows.push([
-    l.name||'', l.email||'', l.phone||'', l.source||'', l.page||'', l.message||'', l.time||''
+    l.name||'', l.email||'', l.phone||'', l.address||l.message||'', l.source||'', l.time||''
   ]));
   const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a = document.createElement('a');
@@ -1855,6 +1960,18 @@ function renderRatings() {
       <td style="padding:9px 12px;font-size:11.5px;">${r.context||'—'}</td>
       <td style="padding:9px 12px;font-size:11px;color:var(--text-muted);">${r.time||'—'}</td>
     </tr>`).join('');
+}
+
+function exportRatingsCSV() {
+  if(!ratingsData.length){ showToast('⚠️','No ratings to export'); return; }
+  const rows = [['Rating','Name','Email','Context','Time']];
+  ratingsData.forEach(r => rows.push([r.rating, r.name||'', r.email||'', r.context||'', r.time||'']));
+  const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'TablePadsPro_Ratings_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  showToast('📥','Ratings exported to CSV!');
 }
 const ADMIN_SERVER = 'https://tablepadspro-chatbot-production.up.railway.app';
 let activeConversations = {};
@@ -1934,7 +2051,6 @@ function fetchAnalytics() {
       } else {
         document.getElementById('s-resolved').textContent = '—';
       }
-      // Show traffic sources
       const tq = document.getElementById('top-questions');
       if(d.sources && Object.keys(d.sources).length > 0) {
         const sorted = Object.entries(d.sources).sort((a,b)=>b[1]-a[1]);
@@ -1947,6 +2063,50 @@ function fetchAnalytics() {
         tq.innerHTML = '<div class="fr"><span class="fq" style="color:var(--text-muted);font-style:italic;">Analytics build up as customers chat. Check back soon!</span></div>';
       }
     }).catch(() => {});
+}
+
+function loadHistory(range) {
+  const tbody = document.getElementById('history-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-muted);">Loading...</td></tr>';
+  fetch(ADMIN_SERVER + '/admin/analytics/history?range=' + range)
+    .then(r => r.json())
+    .then(d => renderHistory(d.history || []))
+    .catch(() => {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#e55;">Could not load history. Data is captured hourly — check back after some traffic.</td></tr>';
+    });
+}
+
+function loadHistoryCustom() {
+  const from = document.getElementById('hist-from').value;
+  const to = document.getElementById('hist-to').value;
+  if(!from || !to) { showToast('⚠️','Please select both From and To dates'); return; }
+  const tbody = document.getElementById('history-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-muted);">Loading...</td></tr>';
+  fetch(ADMIN_SERVER + '/admin/analytics/history?from=' + from + '&to=' + to)
+    .then(r => r.json())
+    .then(d => renderHistory(d.history || []))
+    .catch(() => {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#e55;">Could not load history.</td></tr>';
+    });
+}
+
+function renderHistory(history) {
+  const tbody = document.getElementById('history-body');
+  if(!history.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-muted);">No data for this period. History builds up over time as visitors chat.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = history.map((d,i) => {
+    const topSource = d.sources ? Object.entries(d.sources).sort((a,b)=>b[1]-a[1])[0] : null;
+    return `<tr style="background:${i%2===0?'#fff':'var(--surface2)'};border-bottom:1px solid var(--border);">
+      <td style="padding:8px 12px;font-weight:600;">${d.date}</td>
+      <td style="padding:8px 12px;text-align:center;">${d.conversations||0}</td>
+      <td style="padding:8px 12px;text-align:center;color:var(--brand);font-weight:600;">${d.leads||0}</td>
+      <td style="padding:8px 12px;text-align:center;">${d.ratings||0}</td>
+      <td style="padding:8px 12px;text-align:center;">${d.avgRating>0?d.avgRating+'⭐':'—'}</td>
+      <td style="padding:8px 12px;font-size:11.5px;color:var(--text-muted);">${topSource?topSource[0]:'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 function getTimeSince(iso) {
